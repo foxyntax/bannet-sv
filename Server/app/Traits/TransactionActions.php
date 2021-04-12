@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\User;
 use App\Models\UserWallet;
 use Kavenegar\KavenegarApi;
 use App\Models\UserContract;
@@ -102,10 +103,12 @@ trait TransactionActions {
     protected function notice_users() {
         try {
             // Send SMS to seller
-            Kavenegar::VerifyLookup($this->contract->user_id, '', '', '', 'StartingContractForSeller', 'sms');
+            $seller = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            Kavenegar::VerifyLookup($seller->tell, '', '', '', 'StartingContractForSeller', 'sms');
 
             // Send SMS to Customer
-            Kavenegar::VerifyLookup($this->contract->meta['customer_id'], '', '', '', 'StartingContractForCustomer', 'sms');
+            $customer = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            Kavenegar::VerifyLookup($customer->tell, '', '', '', 'StartingContractForCustomer', 'sms');
             
         } catch(ApiException $e){
             return response()->json($e->errorMessage(), 412);
