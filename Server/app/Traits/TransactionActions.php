@@ -3,8 +3,10 @@
 namespace App\Traits;
 
 use App\Models\UserWallet;
-use App\Models\CoreMembership;
 use Kavenegar\KavenegarApi;
+use App\Models\UserContract;
+use App\Models\CoreMembership;
+use Modules\Auth\Traits\Kavenegar;
 use Kavenegar\Exceptions\ApiException;
 use Kavenegar\Exceptions\HttpException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -81,6 +83,9 @@ trait TransactionActions {
             $this->contract->status = 1;
             $this->contract->meta['customer_id'] = $user_id;
             $this->contract->save();
+
+            // Take a notice customer and seller by sending SMS
+            $this->notice_users();
             
         } catch (\Throwable $th) {
             return response()->json([
@@ -90,20 +95,21 @@ trait TransactionActions {
     }
 
     /** 
-     * Send Token To Tell and Send Token To Client Side
+     ** Take a notice customer and seller by sending SMS
      * 
-     * @return void
+     * @return void/Object
     */
-    protected function send_otp_code($receptor, $token, $template, $format = 'sms')
-    {
-        try{
-            $api = new KavenegarApi(env('OTP_API_KEY'));
-            $api->VerifyLookup($receptor, $token, '', '', $template, $format);
-        }
-        catch(ApiException $e){
+    protected function notice_users() {
+        try {
+            // Send SMS to seller
+            Kavenegar::VerifyLookup($this->contract->user_id, '', '', '', 'StartingContractForSeller', 'sms');
+
+            // Send SMS to Customer
+            Kavenegar::VerifyLookup($this->contract->meta['customer_id'], '', '', '', 'StartingContractForCustomer', 'sms');
+            
+        } catch(ApiException $e){
             return response()->json($e->errorMessage(), 412);
-        }
-        catch(HttpException $e){
+        } catch(HttpException $e){
             return response()->json($e->errorMessage(), 412);
         }
     }
