@@ -54,10 +54,11 @@ class UserContract extends Model
         //     'desc'           => '',
         //     'tire_year'      => '',
         //     'count'          => '',
+        //     'token'          => '',
         //     'shipment_day'   => 1, @int
         //     'cost'           => 0, @int
         //     'customer_id'    => 0, @int
-        //     'shipment_prove' => null @string [file address]
+        //     'shipment_prove' => null, @string [file address]
         // ]  
     ];
 
