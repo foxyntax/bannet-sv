@@ -1,0 +1,137 @@
+<?php
+
+namespace App\Http\Controllers\User;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+
+class LandingController extends Controller
+{
+
+    /**
+     * @var object $response
+     */
+    protected $response;
+
+    /**
+     ** Fetch Lists By Features
+     * 
+     * @param int $product_id
+     * @param int $user_id
+     * @return Illuminate\Http\Response
+     */
+    public function render_product_detail(int $product_id, $user_id = null) : object
+    {
+        try {
+
+            // Fetch product
+            $this->fetch_product_information($product_id);
+
+            // Fetch Advertisments of product
+            $this->fetch_contracts($product_id);
+
+            // Fetch ads of user, if user exists
+            if(! is_null($user_id)) {
+
+                $this->fetch_user_contract($product_id, $user_id);
+            }
+
+            return response()->json([
+                'data'     => $this->response
+            ], 200);
+
+        } catch (\Throwable $th) {
+                        
+            return response()->json([
+                'error'     => $th->getMessage()
+            ], 500);
+        
+        }
+    }
+
+    /**
+     ** Fetch information of certain product
+     *  
+     * @param int $product_id
+     * @return void
+     */
+    protected function fetch_product_information(int $product_id)
+    {
+        $this->response['information'] = CoreProduct::firstWhere('product_id', $product_id)->first();
+    }
+
+    /**
+     ** Fetch contracts by product
+     *  
+     * @param int $product_id
+     * @return void
+     */
+    protected function fetch_contracts(int $product_id)
+    {
+        // Fetch all contracts 
+        $this->response['contracts'] = UserContract::where([
+                                                        'product_id' => $product_id,
+                                                        'status'     => 0
+                                                    ])
+                                                    ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                                                    ->get();
+
+        // get information about each owner's contracts
+        $this->response['contracts']->user();
+
+        // Get Average of contracts
+        $this->response['contracts']['count'] =  count($this->response['contracts']);
+        foreach ($this->response['contracts'] as $row) {
+            $this->response['contracts']['avg'] += (int) $row->meta['cost'];
+        }
+        $this->response['contracts']['avg'] = $this->response['contracts']['avg'] / $this->response['contracts']['count'];
+    }
+
+    /**
+     ** Fetch user information about the product
+     *  
+     * @param int $user_id
+     * @return void
+     */
+    protected function fetch_user_contract(int $product_id, int $user_id)
+    {
+        // Fetch all contracts
+        $this->response['my_contracts'] = UserContract::where([
+                                                            'product_id' => $product_id,
+                                                            'user_id'    => $user_id
+                                                        ])
+                                                        ->where('status', '!=', 3)
+                                                        ->whereDate('expired_at', '>=',  Carbon::now()->toDateString());
+
+        /** 
+         ** is product a favorite item for user? */
+        /**
+         /* Note: You can check favorite products from client side
+         /* Note: for doing it, you can use data fetched from user controllers
+         /* and get data what you need from their API
+         /* Also I didn't delete below codes, because maybe it will be used
+         /* in another situtations. 
+         */
+        // $user = User::find($user_id);
+        // if(count($user->meta['favorites']) > 0) {
+        //     foreach ($user->meta['favorites'] as $id) {
+
+        //         if($id == $product_id) {
+
+        //             $this->response['my_contracts'] = true; break;
+
+        //         }
+
+        //         $this->response['my_contracts'] = false;
+        //     }
+
+        // } else {
+
+        //     $this->response['is_favorite'] = false;
+
+        // }
+    }
+
+}

@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Models;
+
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+
+class User extends Authenticatable
+{
+    use HasFactory, Notifiable, HasApiTokens;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'full_name',
+        'tell',
+        'meta',
+        'is_admin'
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'is_admin'
+    ];
+
+    /**
+     * The model's default values for attributes.
+     *
+     * @param array
+     */
+    protected $attributes = [
+        'meta'  => [
+            'personal'  => [
+                'avatar'     => null,
+                'province'   => null,
+                'city'       => null,
+                'address'    => null,
+                'postal_code'=> null
+            ],
+            'financial' => [
+                'shabaa'        => null,
+                'debit_card'    => ['img'   => null, 'value'    => null, 'validated'    => 0],
+                'national_id'   => ['img'   => null, 'value'    => null, 'validated'    => 0],
+                'license_card'  => ['img'   => null, 'value'    => null, 'validated'    => 0],
+            ],
+            'scores'    => [
+                //* Scores example when it has been filled *//
+                // ['sender_id' => null, 'rate' => 1, 'desc' => '', 'is_seller' => 0]
+            ],
+            'favorites' => [
+                //* Store Product ID
+                // [5,95,64]
+            ]
+        ],
+        'is_admin'   => 0
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'meta'  => AsCollection::class
+    ];
+
+    /**
+     * Get the wallet records associated with the user.
+     */
+    public function user_wallet() {
+        return $this->hasOne('App\Models\UserWallet', 'user_id');
+    }
+
+    /**
+     * Get the incoming records associated with the user.
+     */
+    public function user_contracts() {
+        return $this->hasMany('App\Models\UserContract', 'user_id');
+    }
+
+    /**
+     * Get the incoming records associated with the user.
+     */
+    public function core_incoming() {
+        return $this->hasMany('App\Models\CoreIncoming', 'user_id');
+    }
+
+    /**
+     * Get the transaction records associated with the user.
+     */
+    public function core_transaction() {
+        return $this->hasMany('App\Models\CoreTransaction', 'user_id');
+    }
+}
