@@ -58,7 +58,7 @@ class UserContract extends Model
         //     'shipment_day'   => 1, @int
         //     'cost'           => 0, @int
         //     'customer_id'    => 0, @int
-        //     'shipment_prove' => null, @string [file address]
+        //     'proven_shipment'=> null, @string [file address]
         // ]  
     ];
 
