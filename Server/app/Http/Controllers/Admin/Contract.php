@@ -5,13 +5,11 @@ use App\Models\User;
 use App\Models\UserWallet;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
-use Morilog\Jalali\Jalalian;
-use Modules\Auth\Traits\Kavenegar;
 use App\Http\Controllers\Controller;
-use Kavenegar\Exceptions\ApiException;
 use Illuminate\Support\Facades\Storage;
-use Kavenegar\Exceptions\HttpException;
 use Illuminate\Support\Facades\Validator;
+use Kavenegar\Exceptions\HttpException;
+use Kavenegar\Exceptions\ApiException;
 
 /**
  ** Here I show the methods that I need to develop 
