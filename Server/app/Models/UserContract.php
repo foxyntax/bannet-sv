@@ -44,7 +44,7 @@ class UserContract extends Model
      * @param array
      */
     protected $attributes = [
-        'status'    => 0, // default is 0, paid by customer: 1, shipment has been arrived and seller gives money: 2, has been cancelled: 3
+        'status'    => 0, // default is 0, paid by customer: 1, shipment has been arrived and seller gives money: 2, has been cancelled: 3, has been expired: 4
         'meta'      => []
 
         //* Meta example when it has been filled *//
