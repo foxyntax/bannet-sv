@@ -16,11 +16,6 @@ class Contract extends Controller
 {
 
     /**
-     * @var Illuminate\Http\Response $response
-     */
-    protected $response;
-
-    /**
      * @var int $contract
      */
     protected $contract;
