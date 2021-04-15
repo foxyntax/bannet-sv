@@ -267,8 +267,8 @@ class Products extends Controller
             
             
             return response()->json([
-                'product' => $this->product,
-                'count' => (is_null($searched) && empty($searched)) ? CoreProduct::count() : count($this->product)
+                'product'   => $this->product,
+                'count'     => (is_null($searched) && empty($searched)) ? CoreProduct::count() : count($this->product)
             ], 200);
             
         } catch (\Throwable $th) {
