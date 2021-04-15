@@ -145,7 +145,7 @@ class Contract extends Controller
      ** & Charge seller's available balance
      // The request will be fired from a seller
      * 
-     * @param Request $requestuser_id
+     * @param Illuminate\Http\Request user_id
      * @param Illuminate\Http\Request contract_id
      * @param Illuminate\Http\Request token
      * @return Illuminate\Http\Response 
