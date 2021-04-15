@@ -12,14 +12,14 @@ class RegisterController extends Controller
 {
 
     /**
-     * The User who has been registered
+     ** The User who has been registered
      * 
      * @param App\Models\User
      */
     protected $user;
 
     /**
-     * Register User with Pass
+     ** Register User with Pass
      * 
      * @param \Illuminate\Http\Request 
      * @return \Illuminate\Http\Response 
@@ -40,7 +40,7 @@ class RegisterController extends Controller
     }
 
     /**
-     * Register User with Pass
+     ** Register User with Pass
      * 
      * @param \Illuminate\Http\Request 
      * @return \Illuminate\Http\Response 
@@ -60,7 +60,7 @@ class RegisterController extends Controller
     }
 
     /**
-     * Actions which you need them
+     ** Actions which you need them
      * 
      * @param Illuminate\Http\Request $request
      * @return object
@@ -69,8 +69,9 @@ class RegisterController extends Controller
     {
         try {
 
-            // Your Plans ...
-            // ....
+            /** 
+             ** Your Plans ...
+            */
 
 
             // Renew Name of API token
