@@ -91,14 +91,14 @@ class Contract extends Controller
     }
 
     /**
-     ** Send shipment bill by seller to withdrawal after approving the bill
+     ** Send shipment bill by seller to withdrawal after approving the receipt
      // The request will be fired from a seller
      // The withdrawal after
      * 
      * @param Illuminate\Http\Request contract_id
      * @return Illuminate\Http\Response
      */
-    public function send_proven_shipment_bill(Request $request) : object
+    public function send_proven_shipment_receipt(Request $request) : object
     {
         try {
 
