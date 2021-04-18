@@ -15,7 +15,7 @@ use Kavenegar\Exceptions\ApiException;
  ** Here I show the methods that I need to develop 
  *
  // 1. approve_shipment
- // 2. disapprove_shipment
+ // 2. disapprove_of_receipt
  // 3. expire_contracts
  // 4. fetch_contracts
  // 5. fetch_contract_detail
@@ -88,52 +88,13 @@ class Contract extends Controller
     }
 
     /**
-     ** Expire contracts
-     * 
-     * @return Illuminate\Http\Response 
-     */
-    public function expire_contracts() : object
-    {
-        try {
-
-            // Fetch owners' expired contract
-            $users = UserContract::where('status', 0)
-                                 ->where('expired_at', '<', now())
-                                 ->join('users', 'users.id', '=', 'user_contracts.user_id')
-                                 ->select('full_name', 'tell', 'expired_at')
-                                 ->get();
-
-            // Expire all contracts which are timed out
-            UserContract::where('status', 0)
-                        ->where('expired_at', '<', now())
-                        ->update(['stauts' => 4]);
-
-            // Notice all owners' contract by sending SMS
-            $this->notice_expired_contracts($user);
-
-            // Remove it's address from db, too
-            $this->contract->meta['proven_shipment'] = null;
-            $this->contract->save();
-
-            return response()->json([
-                'status' => true
-            ], 200);
-            
-        } catch (\Throwable $th) {
-            return response()->json([
-                'error' => $th->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     ** Disapprove shipment
+     ** Disapprove of shipment receipt
      * 
      * @param Illuminate\Http\Request user_id
      * @param Illuminate\Http\Request contract_id
      * @return Illuminate\Http\Response 
      */
-    public function disapprove_shipment(Request $request) : object
+    public function disapprove_of_receipt(Request $request) : object
     {
         try {
 
@@ -180,7 +141,7 @@ class Contract extends Controller
     {
         try {
 
-            if(is_null($searched) && empty($searched)) {
+            if (is_null($searched) && empty($searched)) {
                 $this->contract = UserContract::where('core_contracts.status', $status)
                                               ->join('users', 'core_contracts.user_id', '=', 'users.id')
                                               ->join('core_products', 'core_contracts.product_id', '=', 'core_products.id')
@@ -236,6 +197,45 @@ class Contract extends Controller
             return response()->json($e->errorMessage(), 412);
         } catch(HttpException $e){
             return response()->json($e->errorMessage(), 412);
+        }
+    }
+
+    /**
+     ** Expire contracts
+     * 
+     * @return Illuminate\Http\Response 
+     */
+    public function expire_contracts() : object
+    {
+        try {
+
+            // Fetch owners' expired contract
+            $users = UserContract::where('status', 0)
+                                 ->where('expired_at', '<', now())
+                                 ->join('users', 'users.id', '=', 'user_contracts.user_id')
+                                 ->select('full_name', 'tell', 'expired_at')
+                                 ->get();
+
+            // Expire all contracts which are timed out
+            UserContract::where('status', 0)
+                        ->where('expired_at', '<', now())
+                        ->update(['stauts' => 4]);
+
+            // Notice all owners' contract by sending SMS
+            $this->notice_expired_contracts($user);
+
+            // Remove it's address from db, too
+            $this->contract->meta['proven_shipment'] = null;
+            $this->contract->save();
+
+            return response()->json([
+                'status' => true
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
 
