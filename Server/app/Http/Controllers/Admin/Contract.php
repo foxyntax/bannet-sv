@@ -31,7 +31,6 @@ class Contract extends Controller
      */
     protected $contract;
 
-
     /**
      ** Withdrawal contract's cost from customer's pending balance
      * 
@@ -129,7 +128,7 @@ class Contract extends Controller
     }
 
     /**
-     ** Review user [Seller or Customer] after ending contract
+     ** Fetch all contact with pagination
      * 
      * @param int $type
      * @param int $offset
@@ -176,8 +175,9 @@ class Contract extends Controller
     }
 
     /** 
-     ** Take a notice customer sends a withdrawal token to seller by SMS
+     ** Fetch contract detail
      * 
+     * @param in $contract_id
      * @return void/Object
     */
     public function fetch_contract_detail(int $contract_id) : object
@@ -201,7 +201,7 @@ class Contract extends Controller
     }
 
     /**
-     ** Expire contracts
+     ** Cancell all expired contracts
      * 
      * @return Illuminate\Http\Response 
      */
