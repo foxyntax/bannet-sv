@@ -10,6 +10,13 @@ class CoreIncoming extends Model
     use HasFactory;
 
     /**
+     * The table associated with the model.
+     *
+     * @param string
+     */
+    protected $table = 'core_incoming';
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var array
