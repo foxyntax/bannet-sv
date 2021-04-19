@@ -128,7 +128,7 @@ class Profile extends Controller
             }
             
             return response()->json([
-                'stauts' => true,
+                'stauts' => true
             ], 200);
 
         } catch (\Throwable $th) {
@@ -140,37 +140,64 @@ class Profile extends Controller
         }
     }
     /**
-     ** 
+     ** Update debit card validation
      * 
-     * @param
      * @return void
      */
     protected function check_debit_card()
     {
         $this->updated['meta->financial->debit_card->validated'] = ($this->request->debit_card) ? true : false;
-        User::where('id', $this->user_id)->update($updated);
+
+        if (! $this->request->debit_card) {
+            $user = User::where('id', $this->user_id)->select('meta')->get();
+            Storage::delete($user->meta['financial']['debit_card']['img']);
+            $this->updated['meta->financial->debit_card->img'] = null;
+        }
+
+        $this->update_financial_meta();
     }
     /**
-     ** 
+     ** Update national id validation
      * 
-     * @param
-     * @return
+     * @return void
      */
     protected function check_national_id()
     {
         $this->updated['meta->financial->national_id->validated'] = ($this->request->national_id) ? true : false;
-        User::where('id', $this->user_id)->update($updated);
+
+        if (! $this->request->debit_card) {
+            $user = User::where('id', $this->user_id)->select('meta')->get();
+            Storage::delete($user->meta['financial']['national_id']['img']);
+            $this->updated['meta->financial->national_id->img'] = null;
+        }
+
+        $this->update_financial_meta();
     }
     /**
-     ** 
+     ** Update license card validation
      * 
-     * @param
-     * @return
+     * @return void
      */
     protected function check_license_card()
     {
         $this->updated['meta->financial->license_card->validated'] = ($this->request->license_card) ? true : false;
-        User::where('id', $this->user_id)->update($updated);
+
+        if (! $this->request->license_card) {
+            $user = User::where('id', $this->user_id)->select('meta')->get();
+            Storage::delete($user->meta['financial']['license_card']['img']);
+            $this->updated['meta->financial->license_card->img'] = null;
+        }
+
+        $this->update_financial_meta();
     }
-    
+
+    /**
+     ** Update user meta
+     *
+     * @return void 
+     */
+    private function update_financial_meta()
+    {
+        User::where('id', $this->user_id)->update($this->updated);
+    }
 }
