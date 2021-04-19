@@ -18,36 +18,35 @@ use Illuminate\Support\Facades\Validator;
  *
  // 1. fetch_profile = use App\Http\Controllers\Users\Profile
  // 2. fetch_users
- // 3. approve_profile
- // 4. disapprove_profile
+ // 3. identify_profile
  * 
  */
 
 class Profile extends Controller
 {
-    /**
-     * @var Illuminate\Http\Response $response
-     */
-    protected $response;
 
     /**
-     * @var int $user
+     * @var int $user_id
      */
-    protected $user;
+    protected $user_id;
 
     /**
-     * @var Illuminate\Support\Facades\Validator $validator
+     * @var array
      */
-    protected $validator;
+    protected $request;
+
+    /**
+     * @var array
+     */
+    protected $updated;
 
     /**
      ** Fetch Lists By Features
      * 
-     * @param int $user_id
-     * @return Illuminate\Http\Request waller
-     * @return Illuminate\Http\Request membership
-     * @return Illuminate\Http\Request invoice
-     * @return Illuminate\Http\Request contract
+     * @param int $is_admin
+     * @param int $limit
+     * @param int $offset
+     * @param string $searched
      * @return Illuminate\Http\Response
      */
     public function fetch_users(int $is_admin, int $limit, int $offset, $searched = null) : object
@@ -87,4 +86,91 @@ class Profile extends Controller
         
         }
     }
+
+    /**
+     ** Fetch Lists By Features
+     * 
+     * @param int $user_id
+     * @return Illuminate\Http\Request debit_card
+     * @return Illuminate\Http\Request national_id
+     * @return Illuminate\Http\Request license_card
+     * @return Illuminate\Http\Response
+     */
+    public function identify_profile(int $user_id, Request $request) : object
+    {
+        try {
+
+            $validator = Validator::make($request->all(), [
+                'debit_card'     => 'boolean|bail',
+                'national_id'    => 'boolean|bail',
+                'license_card'   => 'boolean|bail'
+            ]);
+    
+            if($validator->fails()) {
+                return response()->json([
+                    'error' => $validator->errors()
+                ], 500);
+            }
+
+            $this->user_id = $user_id;
+            $this->request = $request;
+
+            if ($request->has('debit_card')) {
+                $this->check_debit_card();
+            }
+
+            if ($request->has('national_id')) {
+                $this->check_national_id();
+            }
+
+            if ($request->has('license_card')) {
+                $this->check_license_card();
+            }
+            
+            return response()->json([
+                'stauts' => true,
+            ], 200);
+
+        } catch (\Throwable $th) {
+                        
+            return response()->json([
+                'error'     => $th->getMessage()
+            ], 500);
+        
+        }
+    }
+    /**
+     ** 
+     * 
+     * @param
+     * @return void
+     */
+    protected function check_debit_card()
+    {
+        $this->updated['meta->financial->debit_card->validated'] = ($this->request->debit_card) ? true : false;
+        User::where('id', $this->user_id)->update($updated);
+    }
+    /**
+     ** 
+     * 
+     * @param
+     * @return
+     */
+    protected function check_national_id()
+    {
+        $this->updated['meta->financial->national_id->validated'] = ($this->request->national_id) ? true : false;
+        User::where('id', $this->user_id)->update($updated);
+    }
+    /**
+     ** 
+     * 
+     * @param
+     * @return
+     */
+    protected function check_license_card()
+    {
+        $this->updated['meta->financial->license_card->validated'] = ($this->request->license_card) ? true : false;
+        User::where('id', $this->user_id)->update($updated);
+    }
+    
 }
