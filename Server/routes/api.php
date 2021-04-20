@@ -16,7 +16,26 @@ use Illuminate\Support\Facades\Route;
 
 // Route::middleware('auth:sanctum')
 
-Route::namespace('Users')->prefix('user')->group(function() {
+Route::namespace('User')->prefix('user')->group(function() {
+
+    Route::prefix('fetch')->group(function() {
+
+    });
+
+    Route::prefix('save')->group(function() {
+        
+    });
+
+    Route::prefix('update')->group(function() {
+        
+    });
+
+    Route::prefix('delete')->group(function() {
+
+    });
+});
+
+Route::namespace('Admin')->prefix('cms')->group(function() {
 
     Route::prefix('fetch')->group(function() {
 
