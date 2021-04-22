@@ -73,7 +73,7 @@ class Profile extends Controller
 
             // Get user's receipt
             if($request->has('receipt')) {
-                $this->response['user']->core_incoming();
+                $this->response['user']->core_transaction();
                 // $this->response['receipt'] = CoreIncoming::where('user_id', $user_id)->get();
             }
 
