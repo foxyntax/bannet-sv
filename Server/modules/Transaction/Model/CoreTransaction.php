@@ -51,7 +51,11 @@ class CoreTransaction extends Model
      *
      * @param array
      */
-    protected $hidden = [];
+    protected $hidden = [
+        'user_id',
+        'authority',
+        'verified',
+    ];
 
     /**
      * The attributes that should be cast to native types.
