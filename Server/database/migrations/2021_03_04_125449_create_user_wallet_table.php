@@ -33,6 +33,6 @@ class CreateUserWalletTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_wallets');
+        Schema::dropIfExists('user_wallet');
     }
 }

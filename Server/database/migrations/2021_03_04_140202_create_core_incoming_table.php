@@ -29,6 +29,6 @@ class CreateCoreIncomingTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('core_incomings');
+        Schema::dropIfExists('core_incoming');
     }
 }
