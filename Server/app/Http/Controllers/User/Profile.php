@@ -36,7 +36,7 @@ class Profile extends Controller
      * @param int $user_id
      * @return Illuminate\Http\Request waller
      * @return Illuminate\Http\Request membership
-     * @return Illuminate\Http\Request invoice
+     * @return Illuminate\Http\Request receipt
      * @return Illuminate\Http\Request contract
      * @return Illuminate\Http\Response
      */
@@ -47,7 +47,7 @@ class Profile extends Controller
             $validator = Validator::make($request->all(), [
                 'wallet'    => 'boolean|bail',
                 'membership'=> 'boolean|bail',
-                'invoice'   => 'boolean|bail',
+                'receipt'   => 'boolean|bail',
                 'contract'  => 'boolean|bail',
                 'favorites' => 'boolean|bail'
             ]);
@@ -71,10 +71,10 @@ class Profile extends Controller
                 }
             }
 
-            // Get user's invoice
-            if($request->has('invoice')) {
+            // Get user's receipt
+            if($request->has('receipt')) {
                 $this->response['user']->core_incoming();
-                // $this->response['invoice'] = CoreIncoming::where('user_id', $user_id)->get();
+                // $this->response['receipt'] = CoreIncoming::where('user_id', $user_id)->get();
             }
 
             // Get user's contracts
