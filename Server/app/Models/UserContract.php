@@ -52,7 +52,7 @@ class UserContract extends Model
         //     'province'       => '',
         //     'city'           => '',
         //     'desc'           => '',
-        //     'tire_year'      => '',
+        //     'tyre_year'      => '',
         //     'count'          => '',
         //     'token'          => '',
         //     'shipment_day'   => 1, @int
