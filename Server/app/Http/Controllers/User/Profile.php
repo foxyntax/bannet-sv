@@ -217,15 +217,16 @@ class Profile extends Controller
             // Delete avaialbe avatar first, if $request has new avatar
             if($request->has('avatar') && ! is_null($this->user->meta['personal']['avatar'])) {
                 Storage::delete($this->user->meta['personal']['avatar']);
+                $this->user->meta['personal']['avatar']   = $request->file('avatar')->store($this->user->id);
             } else if ($request->has('avatar')) {
                 $this->user->meta['personal']['avatar']   = $request->file('avatar')->store($this->user->id);
             }
 
             // Save user's personal information
-            $this->user->meta['personal']['province']     = $request->province;
-            $this->user->meta['personal']['city']         = $request->city;
-            $this->user->meta['personal']['address']      = $request->address;
-            $this->user->meta['personal']['postal_code']  = $request->postal_code;
+            $this->user->meta['personal']['province']     = $request->has('province') ? $request->province : isset($this->user->meta['personal']['province']);
+            $this->user->meta['personal']['city']         = $request->has('city') ? $request->city : isset($this->user->meta['personal']['city']);
+            $this->user->meta['personal']['address']      = $request->has('address') ? $request->address : isset($this->user->meta['personal']['address']);
+            $this->user->meta['personal']['postal_code']  = $request->has('postal_code') ? $request->postal_code : isset($this->user->meta['personal']['postal_code']);
 
             $this->user->save();
         } catch (\Throwable $th) {
@@ -278,10 +279,10 @@ class Profile extends Controller
             }
 
             // Save user's financial information
-            $this->user->meta['financial']['debit_card']['value']    = $request->debit_card_value; 
-            $this->user->meta['financial']['national_id']['value']   = $request->national_id_value; 
-            $this->user->meta['financial']['license_card']['value']  = $request->license_card_value; 
-            $this->user->meta['financial']['shabaa']                 = $request->shabaa;
+            $this->user->meta['financial']['debit_card']['value']    = $request->has('debit_card_value') ? $request->debit_card_value : isset($this->user->meta['financial']['debit_card']['value']); 
+            $this->user->meta['financial']['national_id']['value']   = $request->has('national_id_value') ? $request->national_id_value : isset($this->user->meta['financial']['national_id']['value']); 
+            $this->user->meta['financial']['license_card']['value']  = $request->has('license_card_value') ? $request->license_card_value : isset($this->user->meta['financial']['license_card']['value']); 
+            $this->user->meta['financial']['shabaa']                 = $request->has('shabaa') ? $request->shabaa : isset($this->user->meta['financial']['shabaa']);
 
             $this->user->save();
         } catch (\Throwable $th) {
