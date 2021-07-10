@@ -34,7 +34,7 @@ class Profile extends Controller
      ** Fetch Lists By Features
      * 
      * @param int $user_id
-     * @return Illuminate\Http\Request waller
+     * @return Illuminate\Http\Request wallet
      * @return Illuminate\Http\Request membership
      * @return Illuminate\Http\Request receipt
      * @return Illuminate\Http\Request contract
