@@ -34,6 +34,8 @@ trait TransactionActions {
      NOTE: You must check that has user got a membership before??? This request considers, user hasn't any membership now
      * @param int $user_id
      * @param int $membership_id
+     * @param bool $return
+     * @param bool $use_avl_balance
      * @return void/boolean
      */
     protected function set_membership(int $user_id, int $membership_id, bool $return = false, bool $use_avl_balance = false) {
