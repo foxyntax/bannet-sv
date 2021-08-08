@@ -167,7 +167,7 @@ class LoginController extends Controller
      * @param \Illuminate\Http\Request credential_val [or some col which you want to check]
      * @return \Illuminate\Http\Response api token
      */
-    public function submit_otp(Request $request) : object 
+    public function verify_user(Request $request) : object 
     {
         try {
 

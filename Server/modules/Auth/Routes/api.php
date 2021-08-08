@@ -32,7 +32,7 @@ Route::prefix('auth')->group(function () {
         Route::prefix('otp')->group(function () {
             Route::post('/check', 'LoginController@check_user'); // step one [if you want register after check]
             Route::post('/send', 'LoginController@send_otp_token'); // step one [if you just want to send sms to client]
-            Route::post('/submit', 'LoginController@submit_otp'); // step two
+            Route::post('/verify', 'LoginController@verify_user'); // step two
         });
     
     });
