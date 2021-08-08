@@ -21,7 +21,8 @@ class RegisterController extends Controller
     /**
      ** Register User with Pass
      * 
-     * @param \Illuminate\Http\Request 
+     * @param \Illuminate\Http\Request newPassword
+     * @param \Illuminate\Http\Request [optional]
      * @return \Illuminate\Http\Response 
      */
     public function register_by_pass(Request $request) : object
@@ -42,7 +43,7 @@ class RegisterController extends Controller
     /**
      ** Register User with Pass
      * 
-     * @param \Illuminate\Http\Request 
+     * @param \Illuminate\Http\Request [optional]
      * @return \Illuminate\Http\Response 
      */
     public function register_without_pass(Request $request) : object
