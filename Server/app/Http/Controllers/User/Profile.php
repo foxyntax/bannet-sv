@@ -197,7 +197,7 @@ class Profile extends Controller
      * @param Illuminate\Http\Request postal_code
      * @return void
      */
-    public function update_user_personal($request)
+    protected function update_user_personal($request)
     {
 
         try {
@@ -248,7 +248,7 @@ class Profile extends Controller
      * @param Illuminate\Http\Request shabaa
      * @return void
      */
-    public function update_user_financial($request)
+    protected function update_user_financial($request)
     {
 
         try {
@@ -301,7 +301,7 @@ class Profile extends Controller
      * @param Illuminate\Http\Request is_seller
      * @return void
      */
-    public function update_user_scores($request)
+    protected function update_user_scores($request)
     {
 
         try {
@@ -339,7 +339,7 @@ class Profile extends Controller
      * @param Illuminate\Http\Request product_id
      * @return void
      */
-    public function update_user_favorites($request)
+    protected function update_user_favorites($request)
     {
 
         try {
@@ -366,10 +366,10 @@ class Profile extends Controller
     /**
      ** Update user's administration information
      *
-     * @param Illuminate\Http\Request product_id
+     * @param Illuminate\Http\Request is_admin
      * @return void
      */
-    public function switch_admin_mode($request)
+    protected function switch_admin_mode($request)
     {
 
         try {
