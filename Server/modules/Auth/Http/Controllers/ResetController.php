@@ -143,7 +143,6 @@ class ResetController extends Controller
     /**
      * Set new tell
      * 
-     * @param int with_old
      * @param Illuminate\Http\Request id
      * @param Illuminate\Http\Request tell
      * @return \Illuminate\Http\Response boolean success
@@ -173,7 +172,6 @@ class ResetController extends Controller
     /**
      * Set new mail
      * 
-     * @param int with_old
      * @param Illuminate\Http\Request id
      * @param Illuminate\Http\Request mail
      * @return \Illuminate\Http\Response boolean success
