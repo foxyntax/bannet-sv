@@ -27,6 +27,11 @@ class Products extends Controller
      * @param Illuminate\Http\Request $searched
      * @param Illuminate\Http\Request $for_front
      * @param Illuminate\Http\Request $for_back
+     * @param Illuminate\Http\Request $brand
+     * @param Illuminate\Http\Request $width
+     * @param Illuminate\Http\Request $weight
+     * @param Illuminate\Http\Request $height
+     * @param Illuminate\Http\Request $tire_height
      * @return Illuminate\Http\Response
      */
     public function render_product_page($offset, $limit, $get_filters = 'nofilter', Request $request) : object
@@ -34,7 +39,7 @@ class Products extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'type'          => 'boolean|bail',
+                'type'          => 'int|required|bail',
                 'full'          => 'boolean|bail',
                 'searched'      => 'boolean|bail',
                 'for_front'     => 'boolean|bail',
@@ -53,11 +58,11 @@ class Products extends Controller
             }
 
             // Fetch products
-            if($request->has('full')) {
+            if($request->has('full') && $request->full === true) {
 
                 $this->response['products'] = CoreProduct::where('type', $request->type)->offset($offset)->limit($limit)->get();
 
-            } else if($request->has('searched')) {
+            } else if($request->has('searched') && $request->searched === true) {
 
                 $this->fetch_searched_lists($offset, $limit, $request->searched);
 
