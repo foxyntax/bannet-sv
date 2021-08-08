@@ -30,7 +30,7 @@ class Contract extends Controller
     public function generate_withdrawal_req_token(Request $request) : object
     {
         try {
-            $this->contract = find($request->contract_id);
+            $this->contract = UserContract::find($request->contract_id);
             if ($this->contract->status == 1) {
                 // Generate token and change status for withdrawal
                 $this->contract->status = 2;
@@ -72,7 +72,7 @@ class Contract extends Controller
             $customer_wallet->save();
 
             // Change status of contract
-            $this->contract = find($request->contract_id);
+            $this->contract = UserContract::find($request->contract_id);
             $this->contract->status = 3;
             $this->contract->save();
 
@@ -103,8 +103,7 @@ class Contract extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'bill'          => 'mimes:jpg,hevc,heif,png|bail',
-                'contract_id'   => 'string|bail'
+                'bill'  => 'mimes:jpg,hevc,heif,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -114,7 +113,7 @@ class Contract extends Controller
             }
 
             // Get contract detail
-            $this->contract = find($request->contract_id);
+            $this->contract = UserContract::find($request->contract_id);
             
             // Check status of contract
             if ($this->contract->status == 1) {
@@ -208,10 +207,10 @@ class Contract extends Controller
     /**
      ** Review user [Seller or Customer] after ending contract
      * 
-     * @param int $user_id
-     * @param int $is_seller
-     * @param int $desc
-     * @param int $rate
+     * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request is_seller
+     * @param Illuminate\Http\Request desc
+     * @param Illuminate\Http\Request rate
      * @return Illuminate\Http\Response 
      */
     public function review_user(Request $request) : object
