@@ -130,7 +130,7 @@ class Contract extends Controller
     /**
      ** Fetch all contact with pagination
      * 
-     * @param int $type
+     * @param int $status
      * @param int $offset
      * @param int $limit
      * @param string $searched
