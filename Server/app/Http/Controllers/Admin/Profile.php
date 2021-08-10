@@ -88,7 +88,7 @@ class Profile extends Controller
     }
 
     /**
-     ** Fetch Lists By Features
+     ** Identity user's profile
      * 
      * @param int $user_id
      * @return Illuminate\Http\Request debit_card
