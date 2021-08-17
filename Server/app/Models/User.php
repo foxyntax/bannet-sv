@@ -36,7 +36,10 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'is_admin'
+        'is_admin',
+        'password',
+        'created_at',
+        'updated_at'
     ];
 
     /**
@@ -105,6 +108,6 @@ class User extends Authenticatable
      * Get the transaction records associated with the user.
      */
     public function core_transaction() {
-        return $this->hasMany('App\Models\CoreTransaction', 'user_id');
+        return $this->hasMany('Modules\Transaction\Models\CoreTransaction', 'user_id');
     }
 }
