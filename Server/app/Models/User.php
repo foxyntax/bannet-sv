@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
+/**
+ ** User's migration is located in Auth module
+ */
+
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasApiTokens;
@@ -21,6 +25,7 @@ class User extends Authenticatable
     protected $fillable = [
         'full_name',
         'tell',
+        'password',
         'meta',
         'is_admin'
     ];
