@@ -3,9 +3,13 @@
 namespace Modules\Transaction\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Modules\Transaction\Database\Factories\CoreTransactionFactory;
 
 class CoreTransaction extends Model
 {
+    use HasFactory;
     /**
      * The table associated with the model.
      *
@@ -72,5 +76,15 @@ class CoreTransaction extends Model
      */
     public function user() {
         return $this->belongsTo('App\User');
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    protected static function newFactory()
+    {
+        return CoreTransactionFactory::new();
     }
 }
