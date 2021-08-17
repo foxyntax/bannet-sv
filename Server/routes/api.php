@@ -32,7 +32,7 @@ Route::middleware('auth:sanctum')->namespace('User')->prefix('user')->group(func
 
     Route::prefix('profile')->group(function() {
         Route::prefix('fetch')->group(function () {
-            Route::post('/{user_id}', 'Profile@fetch_user_data');
+            Route::get('/{user_id}', 'Profile@fetch_user_data');
             Route::get('/membership', 'Profile@fetch_available_memberships');
         });
 
