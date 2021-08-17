@@ -16,7 +16,7 @@ class UserContract extends Model
      *
      * @param string
      */
-    protected $table = 'core_contracts';
+    protected $table = 'user_contracts';
 
     /**
      * The attributes that are mass assignable.
@@ -68,7 +68,7 @@ class UserContract extends Model
      * @var array
      */
     protected $casts = [
-        'features'  => AsCollection::class
+        'meta'  => AsCollection::class
     ];
 
      /**
