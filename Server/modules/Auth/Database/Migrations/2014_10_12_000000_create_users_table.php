@@ -17,6 +17,7 @@ class CreateUsersTable extends Migration
             $table->id();
             $table->string('full_name');
             $table->string('tell', 11)->unique();
+            $table->string('password')->nullable();
             $table->text('meta')->nullable();
             $table->tinyInteger('is_admin')->default(0);
             $table->timestamps();
