@@ -43,23 +43,10 @@ class Profile extends Controller
     public function fetch_user_data(int $user_id = null, Request $request) : object
     {
         try {
-
-            $validator = Validator::make($request->all(), [
-                'wallet'    => 'boolean|bail',
-                'membership'=> 'boolean|bail',
-                'receipt'   => 'boolean|bail',
-                'contract'  => 'boolean|bail',
-                'favorites' => 'boolean|bail'
-            ]);
-    
-            if($validator->fails()) {
-                return response()->json([
-                    'error' => $validator->errors()
-                ], 500);
-            }
+            
 
             //  Get basic user's data
-            $this->response['user'] = User::find($user_id);
+            $this->response['profile'] = User::find($user_id);
 
             // Get User's wallet
             if($request->has('wallet')) {
@@ -67,25 +54,25 @@ class Profile extends Controller
 
                 // Get User's membership data
                 if($request->has('membership')) {    
-                    $this->response['wallet']->core_membership();
+                    $this->response['wallet']['membership'] = $this->response['wallet']->core_membership;
                 }
             }
 
             // Get user's receipt
             if($request->has('receipt')) {
-                $this->response['user']->core_transaction();
                 // $this->response['receipt'] = CoreIncoming::where('user_id', $user_id)->get();
+                $this->response['receipt'] = $this->response['profile']->core_transaction;
             }
 
             // Get user's contracts
             if($request->has('contract')) {
-                $this->response['user']->user_contracts();
                 // $this->response['contract'] = UserContract::where('user_id', $user_id)->get();
+                $this->response['contract'] = $this->response['profile']->user_contracts;
             }
 
             // Get user's favorites products
             if($request->has('favorites')) {
-                $this->fetch_favorites($this->response['user']->meta['favorites']);
+                $this->fetch_favorites($this->response['profile']->meta['favorites']);
             }
 
             return response()->json([
