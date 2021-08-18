@@ -40,7 +40,9 @@ class UserWallet extends Model
      */
     protected $hidden = [
         'user_id',
-        'membership_id'
+        'membership_id',
+        'created_at',
+        'updated_at',
     ];
 
     /**

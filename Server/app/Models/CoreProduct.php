@@ -32,7 +32,11 @@ class CoreProduct extends Model
      *
      * @var array
      */
-    protected $hidden = ['type'];
+    protected $hidden = [
+        'type',
+        'created_at',
+        'updated_at'
+    ];
 
     /**
      * The model's default values for attributes.
