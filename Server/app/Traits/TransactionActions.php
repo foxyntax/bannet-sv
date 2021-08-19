@@ -114,11 +114,11 @@ trait TransactionActions {
         try {
             // Send SMS to seller
             $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($seller->tell, '', '', '', 'StartingContractForSeller', 'sms');
+            KavenegarApi::VerifyLookup($seller->tell, '', '', '', 'StartingContractForSeller', 'sms');
 
             // Send SMS to Customer
             $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($customer->tell, '', '', '', 'StartingContractForCustomer', 'sms');
+            KavenegarApi::VerifyLookup($customer->tell, '', '', '', 'StartingContractForCustomer', 'sms');
             
         } catch(ApiException $e){
             return response()->json($e->errorMessage(), 412);
