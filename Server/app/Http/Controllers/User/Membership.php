@@ -33,21 +33,33 @@ class Membership extends Controller
      * 
      * @param int $user_id
      */
-    public function is_memebrship_expired(int $user_id) : object
+    public static function is_memebrship_expired(int $user_id, int $return = 0) : object
     {
         try {
             $this->wallet = UserWallet::where('user_id', $user_id)->select('expired_at', 'membership_id')->first();
+            
+            // if function is the helper method.
+            $is_helper = ($return == 1);
 
             if(! is_null($this->wallet->membership_id)) {
                 if(Jalalian::forge($this->wallet->getRawOriginal('expired_at'))->getTimestamp() >= Jalalian::now()->getTimestamp()) {
-                    return response()->json(['status' => true], 200);
+                    return (! $is_helper)
+                        ? response()->json(['status' => true], 200)
+                        : true;
                 } else {
                     $this->wallet->membership_id = null;
                     $this->wallet->expired_at = null;
                     $this->wallet->save();
-                    return response()->json(['status' => false], 200);
+                    return (! $is_helper)
+                        ? response()->json(['status' => false], 200)
+                        : false;
+
                     // Then you must delete all fetched data about old membership in client
                 }
+            }
+            
+            if($is_helper) {
+                return true;
             }
             
         } catch (\Throwable $th) {
