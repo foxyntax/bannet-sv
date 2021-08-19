@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Route;
 
 // Route::middleware('auth:sanctum')
 
+// Tested all
 Route::middleware('auth:sanctum')->namespace('User')->prefix('user')->group(function() {
     Route::prefix('contract')->group(function() {
         Route::post('/token/generate', 'Contract@generate_withdrawal_req_token');
@@ -26,23 +27,20 @@ Route::middleware('auth:sanctum')->namespace('User')->prefix('user')->group(func
     });
 
     Route::prefix('membership')->group(function() {
+        Route::get('/fetch', 'Profile@fetch_available_memberships');
         Route::get('/check/{user_id}', 'Membership@is_memebrship_expired');
-        Route::get('/buy/{user_id}/{membership_id}', 'Membership@buy_membership_from_wallet');
+        Route::patch('/buy/{user_id}/{membership_id}', 'Membership@buy_membership_from_wallet');
     });
 
     Route::prefix('profile')->group(function() {
-        Route::prefix('fetch')->group(function () {
-            Route::get('/{user_id}', 'Profile@fetch_user_data');
-            Route::get('/membership', 'Profile@fetch_available_memberships');
-        });
-
-        Route::patch('/update', 'Profile@update_user_data');
+        Route::get('/fetch/{user_id}', 'Profile@fetch_user_data');
+        Route::patch('/update/{user_id}/{mode}', 'Profile@update_user_data');
     });
-
+    
     Route::prefix('store')->group(function() {
         Route::prefix('fetch')->group(function () {
-            Route::post('/{offset}/{limit}/{get_filters}', 'Products@render_product_page');
-            Route::post('/detail/{product_id}/{user_id}', 'Products@render_product_detail');
+            Route::get('/product/{offset}/{limit}/{get_filters}', 'Products@render_product_page');
+            Route::get('/detail/{product_id}/{user_id}', 'ProductDetail@render_product_detail');
         });
     });
 });
