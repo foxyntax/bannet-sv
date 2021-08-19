@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 // Route::middleware('auth:sanctum')
 
+<<<<<<< HEAD
+=======
+// Tested all
+>>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
 Route::namespace('User')->prefix('user')->group(function() {
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -49,7 +53,11 @@ Route::namespace('User')->prefix('user')->group(function() {
 });
 
 Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(function() {
+<<<<<<< HEAD
 
+=======
+    // All tested
+>>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
     Route::prefix('contract')->group(function() {
         Route::prefix('shipment')->group(function () {
             Route::patch('/approve', 'Contract@approve_shipment');
@@ -64,6 +72,7 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
         Route::patch('/expire', 'Contract@expire');
     });
 
+    // All tested
     Route::prefix('membership')->group(function() {
         Route::get('/fetch/{status}/{offset}/{limit}/{searched?}', 'Membership@fetch');
         Route::post('/create', 'Membership@create');
@@ -71,13 +80,18 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
         Route::delete('/delete/{membership_id}', 'Membership@delete');
     });
 
+    // All tested
     Route::prefix('profile')->group(function() {
         Route::get('/fetch/{is_admin}/{offset}/{limit}/{searched?}', 'Profile@fetch');
         Route::patch('/identity/{user_id}', 'Profile@identify_profile');
     });
 
     Route::prefix('store')->group(function() {
+<<<<<<< HEAD
         
+=======
+        // All tested
+>>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
         Route::prefix('fetch')->group(function () {
             Route::get('/{type}/{offset}/{limit}/{searched?}', 'Products@fetch');
             Route::get('/detail/{product_id}', 'Products@fetch_detail');
@@ -85,6 +99,7 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
 
         Route::post('/create', 'Products@create_product');
         Route::patch('/update/{product_id}', 'Products@update_product');
+        // All tested
         Route::delete('/delete/{product_id}', 'Products@delete_product');
     });
 });
