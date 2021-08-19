@@ -35,6 +35,9 @@ class OptionSeeder extends Seeder
             ], [
                 'option'=> 'ADMIN_TELL',
                 'value' => '09156284764,0912456789' 
+            ], [
+                'option'=> 'CONTRACT_EXPIRATION',
+                'value' => '5' 
             ]
         ]);
     }
