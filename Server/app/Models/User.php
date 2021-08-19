@@ -5,7 +5,7 @@ namespace App\Models;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
@@ -80,7 +80,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $casts = [
-        'meta'  => AsCollection::class
+        'meta'  => AsArrayObject::class
     ];
 
     /**

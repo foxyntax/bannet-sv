@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Morilog\Jalali\Jalalian;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Casts\AsCollection;
+use Illuminate\Database\Eloquent\Casts\AsArrayObject;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class UserContract extends Model
@@ -68,7 +68,7 @@ class UserContract extends Model
      * @var array
      */
     protected $casts = [
-        'meta'  => AsCollection::class
+        'meta'  => AsArrayObject::class
     ];
 
      /**
@@ -78,6 +78,30 @@ class UserContract extends Model
      * @return string
      */
     public function getExpiredAtAttribute($value) {
+        if(! is_null($value)) {
+            return Jalalian::forge($value)->format('%d %B ماه %y');
+        }
+    }
+
+    /**
+     * Convert Expired_at To Jalali Date
+     * 
+     * @param string value
+     * @return string
+     */
+    public function getCreatedAtAttribute($value) {
+        if(! is_null($value)) {
+            return Jalalian::forge($value)->format('%d %B ماه %y');
+        }
+    }
+
+    /**
+     * Convert Expired_at To Jalali Date
+     * 
+     * @param string value
+     * @return string
+     */
+    public function getUpdatedAtAttribute($value) {
         if(! is_null($value)) {
             return Jalalian::forge($value)->format('%d %B ماه %y');
         }
@@ -94,6 +118,6 @@ class UserContract extends Model
      * Get the user that owns the user's contracts records.
      */
     public function user() {
-        return $this->belongsTo('App\Models\User');
+        return $this->belongsTo('App\Models\User', 'user_id');
     }
 }
