@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\CoreProduct;
+use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
@@ -16,8 +17,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException as ModelNotFound;
  // 1. create_product
  // 2. update_product
  // 3. delete_product
- // 4. fetch_products
- // 5. fetch_product_detail
+ // 4. fetch
+ // 5. fetch_detail
  * 
  */
 
@@ -85,10 +86,11 @@ class Products extends Controller
             // new product
             $this->product = new CoreProduct;
             $this->fill_product_model($request);
+            $this->product->features['src'] = [];
             
             // Upload src of pictures
             foreach ($request->file('src') as $src) {
-                $this->product->src = array_push($this->product->src, $request->file($src)->store('product/' . $request->name));
+                array_push($this->product->features['src'], $request->file($src)->store('products/' . $request->name));
             }
 
             $this->product->save();
@@ -127,8 +129,8 @@ class Products extends Controller
      * @param Illuminate\Http\Request speed as feature.speed
      * @param Illuminate\Http\Request width as feature.width
      * @param Illuminate\Http\Request weight as feature.weight
-     * @param Illuminate\Http\Request create_src as feature.src
-     * @param Illuminate\Http\Request delete_src
+     * @param Illuminate\Http\Request new_src as feature.src
+     * @param Illuminate\Http\Request trash_src
      * @return Illuminate\Http\Response
      */
     public function update_product(int $product_id, Request $request) : object
@@ -162,21 +164,21 @@ class Products extends Controller
             $this->product = CoreProduct::findOrFail($product_id);
             $this->fill_product_model($request);
 
-            // Upload new images - if exist
-            if ($request->has('create_src')) {
-                foreach ($request->file('create_src') as $src) {
-                    $this->product->src = array_push($this->product->src, $request->file($src)->store('product/' . $request->name));
+
+            // Delete uploaded trash images
+            if ($request->has('trash_src')) {
+                // remove deleted files and their address
+                foreach ($request->trash_src as $index) {
+                    unset($this->product->features['src'][$index]);
+                    Storage::delete($this->product->features['src'][$index]);
                 }
             }
 
-            // Delete uploaded old images
-            if ($request->has('delete_src')) {
-                // update source addresses in db
-                $this->product->src = array_diff($this->product->src, $request->delete_src);
-
-                // remove deleted files
-                foreach ($request->delete_src as $deleted) {
-                    Storage::delete($deleted);
+            // Upload new images - if exist
+            if ($request->has('new_src')) {
+                foreach ($request->file('new_src') as $src) {
+                    $path = $request->file($src)->store('products/' . $request->name);
+                    array_push($this->product->features['src'], $path);
                 }
             }
 
@@ -211,22 +213,34 @@ class Products extends Controller
     public function delete_product(int $product_id, Request $request) : object
     {
         try {
-    
-            // Delete product
-            $this->product = CoreProduct::where('id', $product_id)->select('name')->frist();
-            CoreProduct::where('id', $product_id)->delete();
 
-            // Delete images of product
-            Storage::deleteDirectory('product/' . $this->product->name);
+            // Is it used before for any contracts?
+            $count = UserContract::where('product_id',$product_id)
+                                 ->where('status', '<', 3)
+                                 ->count();
+    
+            if($count == 0) {
+                // Delete product
+                CoreProduct::where('id', $product_id)->delete();
+
+                // We don't have to delete, we use soft delete instead
+                //  // Delete images of produc
+                // // $this->product = CoreProduct::where('id', $product_id)->select('features')->first();
+                // // Storage::deleteDirectory('product/' . $this->product->features['name']);
+
+                return response()->json([
+                    'status' => true
+                ], 200);
+            }
 
             return response()->json([
-                'status' => true
-            ], 200);
+                'status' => false
+            ], 400);
 
         } catch (\Throwable $th) {
                         
             return response()->json([
-                'error'     => $th->getMessage()
+                'error' => $th->getMessage()
             ], 500);
 
         }
@@ -241,34 +255,26 @@ class Products extends Controller
      * @param string $searched
      * @return Illuminate\Http\Response
      */
-    public function fetch_products(int $type, int $limit, int $offset, $searched = null) : object
+    public function fetch(int $type, int $offset, int $limit, $searched = null) : object
     {
         try {
 
             if(is_null($searched) && empty($searched)) {
                 $this->product = CoreProduct::where('type', $type)
-                                            ->select('name', 'design_name', 'brand')
-                                            ->offset($offset)
-                                            ->limit($limit)
-                                            ->get();
+                                            ->select('features');
             } else {
                 $this->product = CoreProduct::where('type', $type)
                                             ->where(function($query) use ($searched) {
-                                                $query->where('name', 'like', "%$searched%")
-                                                    ->orWhere('design_name', 'like', "%$searched%")
-                                                    ->orWhere('brand', 'like', "%$searched%");
+                                                $query->where('features->name', 'like', "%$searched%")
+                                                    ->orWhere('features->design_name', 'like', "%$searched%")
+                                                    ->orWhere('features->brand', 'like', "%$searched%");
                                             })
-                                            ->select('name', 'design_name', 'brand')
-                                            ->offset($offset)
-                                            ->limit($limit)
-                                            ->get();
+                                            ->select('features');
             }
-
-            
             
             return response()->json([
-                'product'   => $this->product,
-                'count'     => (is_null($searched) && empty($searched)) ? CoreProduct::count() : count($this->product)
+                'product'   => $this->product->offset($offset)->limit($limit)->get(),
+                'count'     => $this->product->count()
             ], 200);
             
         } catch (\Throwable $th) {
@@ -286,7 +292,7 @@ class Products extends Controller
      * @param int $product_id
      * @return Illuminate\Http\Response
      */
-    public function fetch_product_detail(int $product_id) : object
+    public function fetch_detail(int $product_id) : object
     {
         try {
 
@@ -318,18 +324,21 @@ class Products extends Controller
     protected function fill_product_model($request)
     {
         $this->product->type        = $request->type;
-        $this->product->name        = $request->name;
-        $this->product->design_name = $request->design_name;
-        $this->product->diameter    = $request->diameter;
-        $this->product->color       = $request->color;
-        $this->product->country     = $request->country;
-        $this->product->for_back    = $request->for_back;
-        $this->product->for_front   = $request->for_front;
-        $this->product->height      = $request->height;
-        $this->product->tubless     = $request->tubless;
-        $this->product->speed       = $request->speed;
-        $this->product->tire_height = $request->tire_height;
-        $this->product->width       = $request->width;
-        $this->product->weight      = $request->weight;
+        $this->product->features    = [
+            'name'        => $request->name,
+            'design_name' => $request->design_name,
+            'diameter'    => $request->diameter,
+            'color'       => $request->color,
+            'country'     => $request->country,
+            'for_back'    => $request->for_back,
+            'for_front'   => $request->for_front,
+            'height'      => $request->height,
+            'tubless'     => $request->tubless,
+            'speed'       => $request->speed,
+            'tire_height' => $request->tire_height,
+            'width'       => $request->width,
+            'weight'      => $request->weight
+        ];
+        
     }
 }

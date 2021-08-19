@@ -18,6 +18,7 @@ class CreateCoreProductsTable extends Migration
             $table->tinyInteger('type');
             $table->text('features');
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 
@@ -29,5 +30,8 @@ class CreateCoreProductsTable extends Migration
     public function down()
     {
         Schema::dropIfExists('core_products');
+        Schema::table('flights', function (Blueprint $table) {
+            $table->dropSoftDeletes();
+        });
     }
 }
