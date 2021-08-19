@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\UserWallet;
 use Kavenegar\KavenegarApi;
@@ -42,19 +43,26 @@ trait TransactionActions {
         try {
             // Get wallet
             $this->wallet = UserWallet::where('user_id', $user_id)->first();
-            $this->wallet->membership_id = $membership_id;
-
-            // Update expiration for wallet
-            $this->wallet->expired_at = (!is_null($this->membership->days))
-                ? now() + ($this->membership->days * 3600)
-                : null;
 
             // Use available balance if it's needed
             if($use_avl_balance) {
                 // Diff cost from available balance
                 $this->membership = CoreMembership::find($membership_id);
-                $this->wallet->available_balance = $this->wallet->available_balance - $this->membership->meta['cost'];
+
+                if($this->wallet->available_balance >= $this->membership->meta['cost']) {
+                    $this->wallet->available_balance = $this->wallet->available_balance - $this->membership->meta['cost']; 
+                } else {
+                    return response()->json(['status' => false], 400);
+                }
             }
+
+            // Update memebership id
+            $this->wallet->membership_id = $membership_id;
+
+            // Update expiration for wallet
+            $this->wallet->expired_at = (!is_null($this->membership->days))
+                ? Carbon::parse(Carbon::now()->timestamp + ($this->membership->days * 3600))->toDateTimeString()
+                : null;
             
             $this->wallet->save();
 
@@ -105,11 +113,11 @@ trait TransactionActions {
     protected function notice_users() {
         try {
             // Send SMS to seller
-            $seller = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($seller->tell, '', '', '', 'StartingContractForSeller', 'sms');
 
             // Send SMS to Customer
-            $customer = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($customer->tell, '', '', '', 'StartingContractForCustomer', 'sms');
             
         } catch(ApiException $e){
