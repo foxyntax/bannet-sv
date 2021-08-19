@@ -16,10 +16,6 @@ use Illuminate\Support\Facades\Route;
 
 // Route::middleware('auth:sanctum')
 
-<<<<<<< HEAD
-=======
-// Tested all
->>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
 Route::namespace('User')->prefix('user')->group(function() {
 
     Route::middleware('auth:sanctum')->group(function () {
@@ -53,11 +49,6 @@ Route::namespace('User')->prefix('user')->group(function() {
 });
 
 Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(function() {
-<<<<<<< HEAD
-
-=======
-    // All tested
->>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
     Route::prefix('contract')->group(function() {
         Route::prefix('shipment')->group(function () {
             Route::patch('/approve', 'Contract@approve_shipment');
@@ -87,11 +78,6 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
     });
 
     Route::prefix('store')->group(function() {
-<<<<<<< HEAD
-        
-=======
-        // All tested
->>>>>>> eb4410960d80c29d0afd5ef9f12d97fec3533993
         Route::prefix('fetch')->group(function () {
             Route::get('/{type}/{offset}/{limit}/{searched?}', 'Products@fetch');
             Route::get('/detail/{product_id}', 'Products@fetch_detail');
