@@ -39,7 +39,7 @@ class Membership extends Controller
             $this->wallet = UserWallet::where('user_id', $user_id)->select('expired_at', 'membership_id')->first();
 
             if(! is_null($this->wallet->membership_id)) {
-                if($this->wallet->expired_at->getTimestamp() >= Jalalian::now()) {
+                if(Jalalian::forge($this->wallet->getRawOriginal('expired_at'))->getTimestamp() >= Jalalian::now()->getTimestamp()) {
                     return response()->json(['status' => true], 200);
                 } else {
                     $this->wallet->membership_id = null;
@@ -67,7 +67,7 @@ class Membership extends Controller
     public function buy_membership_from_wallet(int $user_id, int $membership_id) : object
     {
         try {
-            return $this->set_membership($user_id, $membership, true, true);
+            return $this->set_membership($user_id, $membership_id, true, true);
         } catch (\Throwable $th) {
             return response()->json([
                 'error' => $th->getMessage()

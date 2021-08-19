@@ -12,9 +12,33 @@ use Illuminate\Support\Facades\Validator;
 class Products extends Controller
 {
     /**
+     * @var Illuminate\Http\Request
+     */
+    protected $request;
+
+
+    /**
      * @var object $response
      */
     protected $response;
+
+    /**
+     * Http Status code instance
+     * 
+     * @var int $http
+     */
+    protected $http;
+
+    /**
+     * set 200 for default http status
+     * 
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->http = 200;
+    }
+    
 
     /**
      ** Render product page [ for first / for show more products ]
@@ -34,21 +58,19 @@ class Products extends Controller
      * @param Illuminate\Http\Request $tire_height
      * @return Illuminate\Http\Response
      */
-    public function render_product_page($offset, $limit, $get_filters = 'nofilter', Request $request) : object
+    public function render_product_page($offset, $limit, $get_filters = 0, Request $request) : object
     {
         try {
 
             $validator = Validator::make($request->all(), [
                 'type'          => 'int|required|bail',
-                'full'          => 'boolean|bail',
-                'searched'      => 'boolean|bail',
-                'for_front'     => 'boolean|bail',
-                'for_back'      => 'boolean|bail',
+                'for_front'     => 'int|bail',
+                'for_back'      => 'int|bail',
                 'brand'         => 'string|bail',
-                'width'         => 'string|integer|bail',
-                'weight'        => 'string|integer|bail',
-                'height'        => 'string|integer|bail',
-                'tire_height'   => 'string|integer|bail'
+                'width'         => 'string|bail',
+                'weight'        => 'string|bail',
+                'height'        => 'string|bail',
+                'tire_height'   => 'string|bail'
             ]);
     
             if($validator->fails()) {
@@ -57,29 +79,23 @@ class Products extends Controller
                 ], 500);
             }
 
-            // Fetch products
-            if($request->has('full') && $request->full === true) {
+            if($this->safe_request($request)) {
+                $this->fetch_products($offset, $limit, $request);
 
-                $this->response['products'] = CoreProduct::where('type', $request->type)->offset($offset)->limit($limit)->get();
+                // Fetch Filter Items
+                if($get_filters == 1) {
+                    $this->fetch_filter_items();
+                }
 
-            } else if($request->has('searched') && $request->searched === true) {
-
-                $this->fetch_searched_lists($offset, $limit, $request->searched);
-
+                return response()->json([
+                    'data' => $this->response
+                ], $this->http);
             } else {
-
-                $this->fetch_filtered_lists($offset, $limit, $request);
-
+                return response()->json([
+                    'error' => 'You used atleast 2 types of request at same time.'
+                ], 400);
             }
-
-            // Fetch Filter Items
-            if($get_filters === 'filter') {
-                $this->fetch_filter_items();
-            }
-
-            return response()->json([
-                'data' => $this->response
-            ], 200);
+            
 
         } catch (\Throwable $th) {
                         
@@ -87,6 +103,57 @@ class Products extends Controller
                 'error'     => $th->getMessage()
             ], 500);
         
+        }
+    }
+
+    /**
+     * Stop progress if we have bad request 
+     * 
+     * @param Illuminate\Http\Request $request
+     * @return bool
+     */
+    protected function safe_request(Request $request)
+    {
+        $types = [
+            ($request->has('full')),
+            ($request->has('searched')),
+            ($request->has('filtered'))
+        ];
+
+        $availabled_types = array_filter($types, function($type) {
+            return ($type === true);
+        });
+
+        return (count($availabled_types) <= 1);
+    }
+
+    /**
+     * fetch products, based on type request
+     * 
+     * @param int offset
+     * @param int limit
+     * @param Illuminate\Http\Request $request
+     * @return object
+     */
+    protected function fetch_products($offset, $limit, Request $request)
+    {
+        if($request->has('full')) {
+
+            $this->response['products'] = CoreProduct::where('type', $request->type)->offset($offset)->limit($limit)->get();
+
+        } else if($request->has('searched')) {
+
+            $this->fetch_searched_lists($offset, $limit, $request->searched);
+
+        } else if($request->has('filtered')) {
+
+            $this->fetch_filtered_lists($offset, $limit, $request);
+
+        } else {
+
+            $this->response = 'You used unavailable type request to fetch data or you didn\'t use any type in.';
+            $this->http = 400;
+
         }
     }
 
@@ -116,9 +183,9 @@ class Products extends Controller
      */
     protected function fetch_searched_lists($offset, $limit, $searched)
     {
-        $this->response['products'] = CoreProduct::JsonContains('features->name', $searched)
+        $this->response['products'] = CoreProduct::where('features->name', $searched)
                                                     ->orWhere(function($query) use ($searched) {
-                                                        $query->JsonContains('features->design_name', $searched);
+                                                        $query->where('features->design_name', $searched);
                                                     })
                                                     ->offset($offset)
                                                     ->limit($limit)
@@ -138,31 +205,31 @@ class Products extends Controller
         $this->response['products'] = CoreProduct::where(function($query) use ($request) {
 
                                                     if ($request->has('brand')) {
-                                                        $query->JsonContains('features->brand', $request->brand);
+                                                        $query->where('features->brand', $request->brand);
                                                     }
 
                                                     if ($request->has('width')) {
-                                                        $query->JsonContains('features->width', $request->width);
+                                                        $query->where('features->width', $request->width);
                                                     }
 
                                                     if ($request->has('weight')) {
-                                                        $query->JsonContains('features->weight', $request->weight);
+                                                        $query->where('features->weight', $request->weight);
                                                     }
                                                     
                                                     if ($request->has('height')) {
-                                                        $query->JsonContains('features->height', $request->height);
+                                                        $query->where('features->height', $request->height);
                                                     }
 
                                                     if ($request->has('tire_height')) {
-                                                        $query->JsonContains('features->tire_height', $request->tire_height);
+                                                        $query->where('features->tire_height', $request->tire_height);
                                                     }
 
                                                     if ($request->has('for_back')) {
-                                                        $query->JsonContains('features->for_back', $request->for_back);
+                                                        $query->where('features->for_back', $request->for_back);
                                                     }
 
                                                     if ($request->has('for_front')) {
-                                                        $query->JsonContains('features->for_front', $request->for_front);
+                                                        $query->where('features->for_front', $request->for_front);
                                                     }
                                                     
                                                 })

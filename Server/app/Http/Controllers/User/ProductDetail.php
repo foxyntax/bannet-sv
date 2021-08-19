@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\User;
 
+use Carbon\Carbon;
+use App\Models\CoreProduct;
+use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-class LandingController extends Controller
+class ProductDetail extends Controller
 {
 
     /**
@@ -22,7 +25,7 @@ class LandingController extends Controller
      * @param int $user_id
      * @return Illuminate\Http\Response
      */
-    public function render_product_detail(int $product_id, $user_id = null) : object
+    public function render_product_detail(int $product_id, $user_id = 0) : object
     {
         try {
 
@@ -33,8 +36,7 @@ class LandingController extends Controller
             $this->fetch_contracts($product_id);
 
             // Fetch ads of user, if user exists
-            if(! is_null($user_id)) {
-
+            if($user_id != 0) {
                 $this->fetch_user_contract($product_id, $user_id);
             }
 
@@ -59,7 +61,7 @@ class LandingController extends Controller
      */
     protected function fetch_product_information(int $product_id)
     {
-        $this->response['information'] = CoreProduct::firstWhere('product_id', $product_id)->first();
+        $this->response['information'] = CoreProduct::find($product_id);
     }
 
     /**
@@ -71,22 +73,17 @@ class LandingController extends Controller
     protected function fetch_contracts(int $product_id)
     {
         // Fetch all contracts 
-        $this->response['contracts'] = UserContract::where([
+        /**
+         /* Note: You have to hide contracts that logged user have them in client side.
+         */
+        $this->response['contracts'] = UserContract::with('user')
+                                                    ->where([
                                                         'product_id' => $product_id,
                                                         'status'     => 0
                                                     ])
                                                     ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
                                                     ->get();
-
-        // get information about each owner's contracts
-        $this->response['contracts']->user();
-
-        // Get Average of contracts
-        $this->response['contracts']['count'] =  count($this->response['contracts']);
-        foreach ($this->response['contracts'] as $row) {
-            $this->response['contracts']['avg'] += (int) $row->meta['cost'];
-        }
-        $this->response['contracts']['avg'] = $this->response['contracts']['avg'] / $this->response['contracts']['count'];
+        $this->get_avg_cost();
     }
 
     /**
@@ -103,7 +100,8 @@ class LandingController extends Controller
                                                             'user_id'    => $user_id
                                                         ])
                                                         ->where('status', '!=', 3)
-                                                        ->whereDate('expired_at', '>=',  Carbon::now()->toDateString());
+                                                        ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                                                        ->get();
 
         /** 
          ** is product a favorite item for user? */
@@ -134,4 +132,23 @@ class LandingController extends Controller
         // }
     }
 
+    /**
+     ** Get Average cost of contracts
+     * 
+     * @return void
+     */
+    protected function get_avg_cost()
+    {
+        $total = 0;
+        $this->response['contract_count'] =  count($this->response['contracts']);
+
+        if($this->response['contract_count'] > 0) {
+            foreach ($this->response['contracts'] as $contract) {
+                $total += (int) $contract->meta['cost'];
+            }
+
+            $this->response['contract_avg'] = round($total / $this->response['contract_count']);
+
+        }
+    }
 }
