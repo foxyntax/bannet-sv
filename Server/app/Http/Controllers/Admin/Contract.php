@@ -69,7 +69,7 @@ class Contract extends Controller
             $seller_wallet->save();
 
             // Take a notice customer and seller by sending SMS
-            $this->notice_withdrawal();
+            // $this->notice_withdrawal();
 
             // Change status
             $this->contract->status = 2;
@@ -222,7 +222,7 @@ class Contract extends Controller
                         ->update(['stauts' => 4]);
 
             // Notice all owners' contract by sending SMS
-            $this->notice_expired_contracts($user);
+            // $this->notice_expired_contracts($user);
 
             // Remove it's address from db, too
             $this->contract->meta['proven_shipment'] = null;
@@ -247,11 +247,11 @@ class Contract extends Controller
     protected function notice_withdrawal() {
         try {
             // Send SMS to seller
-            $seller = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForSeller', 'sms');
 
             // Send SMS to Customer
-            $customer = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForCustomer', 'sms');
             
         } catch(ApiException $e){

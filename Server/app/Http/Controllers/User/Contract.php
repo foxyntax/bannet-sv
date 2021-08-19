@@ -30,6 +30,16 @@ class Contract extends Controller
     public function generate_withdrawal_req_token(Request $request) : object
     {
         try {
+            $validator = Validator::make($request->all(), [
+                'contract_id'=> 'integer|required',
+            ]);
+    
+            if($validator->fails()) {
+                return response()->json([
+                    'error' => $validator->errors()
+                ], 500);
+            }
+
             $this->contract = UserContract::find($request->contract_id);
             if ($this->contract->status == 1) {
                 // Generate token and change status for withdrawal
@@ -38,7 +48,7 @@ class Contract extends Controller
                 $this->contract->save();
 
                 // Take a notice customer and seller by sending SMS
-                $this->notice_generate_token();
+                // $this->notice_generate_token();
 
                 return response()->json([
                     'status' => true
@@ -66,18 +76,30 @@ class Contract extends Controller
     public function cancel_contract(Request $request) : object
     {
         try {
-            // Withdrawal cusomter's cash
+            $validator = Validator::make($request->all(), [
+                'contract_id'=> 'integer|required',
+            ]);
+    
+            if($validator->fails()) {
+                return response()->json([
+                    'error' => $validator->errors()
+                ], 500);
+            }
+
+            $this->contract = UserContract::find($request->contract_id);
+            $customer_wallet = UserWallet::find($this->contract->meta['customer_id']);
+
+            // Withdrawal customer's cash
             $customer_wallet->pending_balance = $customer_wallet->pending_balance - $this->contract->meta['cost'];
             $customer_wallet->withdraw_balance = $customer_wallet->withdraw_balance + $this->contract->meta['cost'];
             $customer_wallet->save();
 
             // Change status of contract
-            $this->contract = UserContract::find($request->contract_id);
-            $this->contract->status = 3;
+            $this->contract->status = 4;
             $this->contract->save();
 
             // Take a notice customer and seller by sending SMS
-            $this->notice_cancel_contract();
+            // $this->notice_cancel_contract();
 
             return response()->json([
                 'status' => true
@@ -103,7 +125,8 @@ class Contract extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'bill'  => 'mimes:jpg,hevc,heif,png|bail'
+                'contract_id'   => 'integer|required',
+                'bill'          => 'mimes:jpg,hevc,heif,png|required|bail'
             ]);
     
             if($validator->fails()) {
@@ -118,7 +141,7 @@ class Contract extends Controller
             // Check status of contract
             if ($this->contract->status == 1) {
 
-                $this->contract->meta['proven_shipment']   = $request->file('bill')->store($this->contract->user_id . '/' . 'shipment_docs');
+                $this->contract->meta['proven_shipment']   = $request->file('bill')->store('users/' . $this->contract->user_id . '/shipment_docs');
                 $this->contract->save();
 
                 return response()->json([
@@ -129,7 +152,7 @@ class Contract extends Controller
             // You can't send your document until contract hasn't been started
             return response()->json([
                 'status' => false
-            ], 500);
+            ], 400);
             
             
         } catch (\Throwable $th) {
@@ -183,8 +206,10 @@ class Contract extends Controller
                 $seller_wallet->available_balance = $customer_wallet->available_balance + $this->contract->meta['cost'];
                 $seller_wallet->save();
 
+                $this->contract->status = 3;
+
                 // Take a notice customer and seller by sending SMS
-                $this->notice_withdrawal();
+                // $this->notice_withdrawal();
 
                 return response()->json([
                     'status' => true,
@@ -195,7 +220,7 @@ class Contract extends Controller
             // You can't withdrawal until customer hasn't sent the token
             return response()->json([
                 'status' => false
-            ], 500);
+            ], 400);
             
         } catch (\Throwable $th) {
             return response()->json([
@@ -208,6 +233,7 @@ class Contract extends Controller
      ** Review user [Seller or Customer] after ending contract
      * 
      * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request sender_id
      * @param Illuminate\Http\Request is_seller
      * @param Illuminate\Http\Request desc
      * @param Illuminate\Http\Request rate
@@ -219,6 +245,7 @@ class Contract extends Controller
 
             $validator = Validator::make($request->all(), [
                 'user_id'   => 'integer|required|bail',
+                'sender_id' => 'integer|required|bail',
                 'is_seller' => 'integer|required|bail|between:0,1',
                 'rate'      => 'integer|required|bail|between:1,5',
                 'desc'      => 'string|bail',
@@ -258,7 +285,7 @@ class Contract extends Controller
     protected function notice_generate_token() {
         try {
             // Send SMS to seller
-            $seller = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['token'], '', '', 'GetWithdrawalTokenForSeller', 'sms');
             
         } catch(ApiException $e){
@@ -276,7 +303,7 @@ class Contract extends Controller
     protected function notice_cancel_contract() {
         try {
             // Send SMS to Customer
-            $customer = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'CancelContractForCustomer', 'sms');
             
         } catch(ApiException $e){
@@ -294,11 +321,11 @@ class Contract extends Controller
     protected function notice_withdrawal() {
         try {
             // Send SMS to seller
-            $seller = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForSeller', 'sms');
 
             // Send SMS to Customer
-            $customer = User::select('tell')->where('user_id', $this->contract->user_id)->first();
+            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
             Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForCustomer', 'sms');
             
         } catch(ApiException $e){
