@@ -1,24 +1,84 @@
 <?php
 namespace App\Http\Controllers\User;
 
+use Carbon\Carbon;
 use App\Models\User;
 use App\Models\UserWallet;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
 use Morilog\Jalali\Jalalian;
-use Modules\Auth\Traits\Kavenegar;
 use App\Http\Controllers\Controller;
-use Kavenegar\Exceptions\ApiException;
-use Kavenegar\Exceptions\HttpException;
+use App\Traits\Contract\ContractNotice;
+use Modules\Settings\Models\CoreOption;
+use App\Http\Controllers\User\Membership;
 use Illuminate\Support\Facades\Validator;
 
 class Contract extends Controller
 {
+    use ContractNotice;
 
     /**
      * @var int $contract
      */
     protected $contract;
+
+    /**
+     ** Create new contract
+     // The request will be fired from a seller
+     * 
+     * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request product_id
+     * @param Illuminate\Http\Request province
+     * @param Illuminate\Http\Request city
+     * @param Illuminate\Http\Request desc
+     * @param Illuminate\Http\Request tyre_year
+     * @param Illuminate\Http\Request count
+     * @param Illuminate\Http\Request shipment_day
+     * @return Illuminate\Http\Response
+     */
+    public function create(Request $request) : object
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'user_id'       => 'bail|integer|required',
+                'product_id'    => 'bail|integer|required',
+                'province'      => 'bail|string|required',
+                'city'          => 'bail|string|required',
+                'desc'          => 'bail|string|required',
+                'tyre_year'     => 'bail|integer|required',
+                'count'         => 'bail|integer|required',
+                'shipment_day'  => 'bail|integer|required',
+            ]);
+    
+            if($validator->fails()) {
+                return response()->json([
+                    'error' => $validator->errors()
+                ], 500);
+            }
+
+            $has_membership = Membership::is_memebrship_expired($request->user_id, 1);
+
+            if($has_membership) {
+                $exp_days = $this->get_contract_expiration();
+                $new = $this->insert_new_contract($request, $exp_days->value);
+
+                return response()->json([
+                    'status'    => true,
+                    'contract'  => $new
+                ], 200);
+            }
+
+            return response()->json([
+                'status'=> false,
+                'desc'  => 'you haven\'t got any actived membership'
+            ], 400);
+            
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
 
     /**
      ** Generate Token for withdrawaling
@@ -73,7 +133,7 @@ class Contract extends Controller
      * @param Illuminate\Http\Request contract_id
      * @return Illuminate\Http\Response
      */
-    public function cancel_contract(Request $request) : object
+    public function cancel(Request $request) : object
     {
         try {
             $validator = Validator::make($request->all(), [
@@ -277,61 +337,52 @@ class Contract extends Controller
         }
     }
 
-    /** 
-     ** Take a notice customer sends a withdrawal token to seller by SMS
+    /**
+     ** Get due option 
      * 
-     * @return void/Object
-    */
-    protected function notice_generate_token() {
+     * @return int
+     */
+    protected function get_contract_expiration()
+    {
         try {
-            // Send SMS to seller
-            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['token'], '', '', 'GetWithdrawalTokenForSeller', 'sms');
-            
-        } catch(ApiException $e){
-            return response()->json($e->errorMessage(), 412);
-        } catch(HttpException $e){
-            return response()->json($e->errorMessage(), 412);
+            return CoreOption::where('option', 'CONTRACT_EXPIRATION')
+                            ->select('value')
+                            ->first();
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
-
-    /** 
-     ** Take a notice that seller cancels contract by SMS
+    
+    /**
+     ** Insert contract detail to DB
      * 
-     * @return void/Object
-    */
-    protected function notice_cancel_contract() {
+     * @return int
+     */
+    protected function insert_new_contract(Request $request, $exp_days)
+    {
         try {
-            // Send SMS to Customer
-            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'CancelContractForCustomer', 'sms');
-            
-        } catch(ApiException $e){
-            return response()->json($e->errorMessage(), 412);
-        } catch(HttpException $e){
-            return response()->json($e->errorMessage(), 412);
-        }
-    }
+            $new = new UserContract;
+            $new->user_id       = $request->user_id;
+            $new->product_id    = $request->product_id;
+            $new->status        = 0;
+            $new->meta = [
+                'province'      => $request->province,
+                'city'          => $request->city,
+                'desc'          => $request->desc,
+                'tyre_year'     => $request->tyre_year,
+                'count'         => $request->count,
+                'shipment_day'  => $request->shipment_day
+            ];
+            $new->expired_at    = Carbon::parse(Carbon::now()->timestamp + ($exp_days * 24 * 3600))->toDateTimeString();
+            $new->save();
 
-    /** 
-     ** Take a notice that seller gets his money by SMS
-     * 
-     * @return void/Object
-    */
-    protected function notice_withdrawal() {
-        try {
-            // Send SMS to seller
-            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForSeller', 'sms');
-
-            // Send SMS to Customer
-            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForCustomer', 'sms');
-            
-        } catch(ApiException $e){
-            return response()->json($e->errorMessage(), 412);
-        } catch(HttpException $e){
-            return response()->json($e->errorMessage(), 412);
+            return $new;
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
         }
     }
     
