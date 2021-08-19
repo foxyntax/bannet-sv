@@ -1,30 +1,30 @@
 <?php
-namespace App\Http\Controllers\User;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\User;
 use App\Models\UserWallet;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Traits\Contract\ContractNotice;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
-use Kavenegar\Exceptions\HttpException;
-use Kavenegar\Exceptions\ApiException;
+use Illuminate\Support\Facades\Validator;;
 
 /**
  ** Here I show the methods that I need to develop 
  *
  // 1. approve_shipment
  // 2. disapprove_of_receipt
- // 3. expire_contracts
- // 4. fetch_contracts
- // 5. fetch_contract_detail
+ // 3. expire
+ // 4. fetch
+ // 5. fetch_detail
  * 
  */
 
 
 class Contract extends Controller
 {
+    use ContractNotice;
 
     /**
      * @var int $contract
@@ -32,9 +32,9 @@ class Contract extends Controller
     protected $contract;
 
     /**
-     ** Withdrawal contract's cost from customer's pending balance
+     ** Withdrawal contract's cost from customer's pending balance for seller
      * 
-     * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request customer_id
      * @param Illuminate\Http\Request contract_id
      * @return Illuminate\Http\Response 
      */
@@ -43,7 +43,7 @@ class Contract extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'user_id'    => 'integer|required|bail',
+                'customer_id'    => 'integer|required|bail',
                 'contract_id'=> 'integer|required|bail'
             ]);
     
@@ -57,8 +57,8 @@ class Contract extends Controller
             $this->contract = UserContract::find($request->contract_id);
 
             // get user's and seller's wallet
-            $seller_wallet = UserWallet::select('available_balance')->where('user_id', $this->contract->user_id)->first();
-            $customer_wallet = UserWallet::find($request->user_id);
+            $seller_wallet = UserWallet::select('available_balance')->where('user_id', $this->contract->customer_id)->first();
+            $customer_wallet = UserWallet::find($request->customer_id);
 
             // Update customer's wallet
             $customer_wallet->pending_balance = $customer_wallet->pending_balance - $this->contract->meta['cost'];
@@ -89,7 +89,6 @@ class Contract extends Controller
     /**
      ** Disapprove of shipment receipt
      * 
-     * @param Illuminate\Http\Request user_id
      * @param Illuminate\Http\Request contract_id
      * @return Illuminate\Http\Response 
      */
@@ -107,7 +106,7 @@ class Contract extends Controller
                 ], 500);
             }
 
-            $this->contract = UserContract::find($contract_id);
+            $this->contract = UserContract::find($request->contract_id);
 
             // Delete proven shipment from local storage
             Storage::delete($this->contract->meta['proven_shipment']);
@@ -136,35 +135,31 @@ class Contract extends Controller
      * @param string $searched
      * @return Illuminate\Http\Response
      */
-    public function fetch_contracts(int $status, int $limit, int $offset, $searched = null) : object
+    public function fetch(int $status, int $offset, int $limit, $searched = null) : object
     {
         try {
 
             if (is_null($searched) && empty($searched)) {
-                $this->contract = UserContract::where('core_contracts.status', $status)
-                                              ->join('users', 'core_contracts.user_id', '=', 'users.id')
-                                              ->join('core_products', 'core_contracts.product_id', '=', 'core_products.id')
-                                              ->select('core_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
-                                              ->offset($offset)
-                                              ->limit($limit)
-                                              ->get();
+                $this->contract = UserContract::where('user_contracts.status', $status)
+                                              ->select('user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
+                                              ->join('users', 'user_contracts.user_id', '=', 'users.id')
+                                              ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id');
             } else {
-                $this->contract = UserContract::where('core_contracts.status', $status)
+                $this->contract = UserContract::where('user_contracts.status', $status)
                                               ->where(function($query) use ($searched) {
                                                   $query->where('users.full_name', 'like', "%$searched%")
                                                         ->orWhere('users.full_name', 'like', "%$searched%");
                                               })
-                                              ->select('core_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
-                                              ->offset($offset)
-                                              ->limit($limit)
-                                              ->get();
+                                              ->select('user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
+                                              ->join('users', 'user_contracts.user_id', '=', 'users.id')
+                                              ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id');
+                                              
+                                              
             }
-
-            
             
             return response()->json([
-                'contract'  => $this->contract,
-                'count'     => (is_null($searched) && empty($searched)) ? UserContract::count() : count($this->contract)
+                'contract'  => $this->contract->offset($offset)->limit($limit)->get(),
+                'count'     => $this->contract->count()
             ], 200);
             
         } catch (\Throwable $th) {
@@ -180,7 +175,7 @@ class Contract extends Controller
      * @param in $contract_id
      * @return void/Object
     */
-    public function fetch_contract_detail(int $contract_id) : object
+    public function fetch_detail(int $contract_id) : object
     {
         try {
             
@@ -205,7 +200,7 @@ class Contract extends Controller
      * 
      * @return Illuminate\Http\Response 
      */
-    public function expire_contracts() : object
+    public function expire() : object
     {
         try {
 
@@ -219,14 +214,10 @@ class Contract extends Controller
             // Expire all contracts which are timed out
             UserContract::where('status', 0)
                         ->where('expired_at', '<', now())
-                        ->update(['stauts' => 4]);
+                        ->update(['status' => 4]);
 
             // Notice all owners' contract by sending SMS
             // $this->notice_expired_contracts($user);
-
-            // Remove it's address from db, too
-            $this->contract->meta['proven_shipment'] = null;
-            $this->contract->save();
 
             return response()->json([
                 'status' => true
@@ -236,48 +227,6 @@ class Contract extends Controller
             return response()->json([
                 'error' => $th->getMessage()
             ], 500);
-        }
-    }
-
-    /** 
-     ** Take a notice that seller gets his money by SMS
-     * 
-     * @return void/Object
-    */
-    protected function notice_withdrawal() {
-        try {
-            // Send SMS to seller
-            $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($seller->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForSeller', 'sms');
-
-            // Send SMS to Customer
-            $customer = User::select('tell')->where('id', $this->contract->user_id)->first();
-            Kavenegar::VerifyLookup($customer->tell, $this->contract->meta['cost'], '', '', 'WithdrawalPendingBalanceForCustomer', 'sms');
-            
-        } catch(ApiException $e){
-            return response()->json($e->errorMessage(), 412);
-        } catch(HttpException $e){
-            return response()->json($e->errorMessage(), 412);
-        }
-    }
-    
-    /** 
-     ** Notice all owners' contract by sending SMS
-     * 
-     * @param collection $user
-     * @return void/Object
-    */
-    protected function notice_expired_contracts($user) {
-        try {
-            // Send SMS to seller
-            foreach ($users as $user) {
-                Kavenegar::VerifyLookup($user->tell, $user->full_name, $user->expired_at, '', 'WithdrawalPendingBalanceForSeller', 'sms');
-            }
-            
-        } catch(ApiException $e){
-            return response()->json($e->errorMessage(), 412);
-        } catch(HttpException $e){
-            return response()->json($e->errorMessage(), 412);
         }
     }
 }

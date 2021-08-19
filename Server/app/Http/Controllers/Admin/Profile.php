@@ -17,13 +17,17 @@ use Illuminate\Support\Facades\Validator;
  ** Here I show the methods that I need to develop 
  *
  // 1. fetch_profile = use App\Http\Controllers\Users\Profile
- // 2. fetch_users
+ // 2. fetch
  // 3. identify_profile
  * 
  */
 
 class Profile extends Controller
 {
+    /**
+     * @var int $user
+     */
+    protected $user;
 
     /**
      * @var int $user_id
@@ -49,33 +53,28 @@ class Profile extends Controller
      * @param string $searched
      * @return Illuminate\Http\Response
      */
-    public function fetch_users(int $is_admin, int $limit, int $offset, $searched = null) : object
+    public function fetch(int $is_admin, int $offset, int $limit, $searched = null) : object
     {
         try {
-
             if(is_null($searched) && empty($searched)) {
-                $this->contract = UserContract::where('core_contracts.is_admin', $is_admin)
-                                              ->join('users', 'core_contracts.user_id', '=', 'users.id')
-                                              ->join('core_products', 'core_contracts.product_id', '=', 'core_products.id')
-                                              ->select('core_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
-                                              ->offset($offset)
-                                              ->limit($limit)
-                                              ->get();
+                $this->user = User::where('is_admin', $is_admin);
+                // $this->user->user_contracts;
             } else {
-                $this->contract = UserContract::where('is_admin', $is_admin)
-                                              ->where(function($query) use ($searched) {
-                                                  $query->where('users.full_name', 'like', "%$searched%")
-                                                        ->orWhere('users.full_name', 'like', "%$searched%");
-                                              })
-                                              ->select('core_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
-                                              ->offset($offset)
-                                              ->limit($limit)
-                                              ->get();
+                $this->user = User::where('users.is_admin', $is_admin)
+                                  ->where(function($query) use ($searched) {
+                                      $query->where('users.full_name', 'like', "%$searched%")
+                                          ->orWhere('users.full_name', 'like', "%$searched%");
+                                  });
             }
+
+            $count = $this->user->count();
+            $this->user = $this->user->offset($offset)
+                                     ->limit($limit)
+                                     ->get();
             
             return response()->json([
-                'contract'  => $this->contract,
-                'count'     => (is_null($searched) && empty($searched)) ? UserContract::count() : count($this->contract)
+                'users' => $this->user,
+                'count' => $count
             ], 200);
 
         } catch (\Throwable $th) {
@@ -101,9 +100,9 @@ class Profile extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'debit_card'     => 'boolean|bail',
-                'national_id'    => 'boolean|bail',
-                'license_card'   => 'boolean|bail'
+                'debit_card'     => 'integer|bail',
+                'national_id'    => 'integer|bail',
+                'license_card'   => 'integer|bail'
             ]);
     
             if($validator->fails()) {
@@ -115,16 +114,17 @@ class Profile extends Controller
             $this->user_id = $user_id;
             $this->request = $request;
 
+
             if ($request->has('debit_card')) {
-                $this->check_debit_card();
+                $this->check_docs('debit_card', $this->request->debit_card);
             }
 
             if ($request->has('national_id')) {
-                $this->check_national_id();
+                $this->check_docs('national_id', $this->request->national_id);
             }
 
             if ($request->has('license_card')) {
-                $this->check_license_card();
+                $this->check_docs('license_card', $this->request->license_card);
             }
             
             return response()->json([
@@ -139,62 +139,27 @@ class Profile extends Controller
         
         }
     }
-    
+
     /**
-     ** Update debit card validation
+     ** Update document validation
      * 
      * @return void
      */
-    protected function check_debit_card()
+    protected function check_docs(string $doc_name, $req)
     {
-        $this->updated['meta->financial->debit_card->validated'] = ($this->request->debit_card) ? true : false;
+        $this->updated['meta->financial->'.$doc_name.'->validated'] = ($req == 1);
 
-        if (! $this->request->debit_card) {
-            $user = User::where('id', $this->user_id)->select('meta')->get();
-            Storage::delete($user->meta['financial']['debit_card']['img']);
-            $this->updated['meta->financial->debit_card->img'] = null;
-        }
-
-        $this->update_financial_meta();
-    }
-    /**
-     ** Update national id validation
-     * 
-     * @return void
-     */
-    protected function check_national_id()
-    {
-        $this->updated['meta->financial->national_id->validated'] = ($this->request->national_id) ? true : false;
-
-        if (! $this->request->debit_card) {
-            $user = User::where('id', $this->user_id)->select('meta')->get();
-            Storage::delete($user->meta['financial']['national_id']['img']);
-            $this->updated['meta->financial->national_id->img'] = null;
+        if ($req == 0) {
+            $user = User::where('id', $this->user_id)->select('meta')->first();
+            Storage::delete($user->meta['financial'][$doc_name]['img']);
+            $this->updated['meta->financial->'.$doc_name.'->img'] = null;
         }
 
         $this->update_financial_meta();
     }
 
     /**
-     ** Update license card validation
-     * 
-     * @return void
-     */
-    protected function check_license_card()
-    {
-        $this->updated['meta->financial->license_card->validated'] = ($this->request->license_card) ? true : false;
-
-        if (! $this->request->license_card) {
-            $user = User::where('id', $this->user_id)->select('meta')->get();
-            Storage::delete($user->meta['financial']['license_card']['img']);
-            $this->updated['meta->financial->license_card->img'] = null;
-        }
-
-        $this->update_financial_meta();
-    }
-
-    /**
-     ** Update user meta
+     ** Update user meta [financial section]
      *
      * @return void 
      */
