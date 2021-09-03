@@ -40,9 +40,9 @@ class CoreProductFactory extends Factory
                 'width'       => $this->faker->randomFloat(1, 10, 20),
                 'weight'      => $this->faker->randomFloat(1, 6, 25),
                 'src'         => [
-                    '/assets/product/test/1.png',
-                    '/assets/product/test/2.png',
-                    '/assets/product/test/3.png',
+                    '/product/test/1.jpg',
+                    '/product/test/2.jpg',
+                    '/product/test/3.jpg',
                 ]
             ]
         ];
