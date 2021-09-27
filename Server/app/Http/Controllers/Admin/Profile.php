@@ -9,6 +9,7 @@ use App\Models\CoreIncoming;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Models\CoreMembership;
+use App\Traits\Profile\Wallet;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -24,6 +25,8 @@ use Illuminate\Support\Facades\Validator;
 
 class Profile extends Controller
 {
+    use Wallet;
+    
     /**
      * @var int $user
      */

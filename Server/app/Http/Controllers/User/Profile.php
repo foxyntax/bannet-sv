@@ -2,13 +2,14 @@
 
 namespace App\Http\Controllers\User;
 
+use App\Traits\Profile\Wallet;
+use App\Http\Controllers\Controller;
 use App\Traits\Profile\FetchProfile;
 use App\Traits\Profile\UpdateProfile;
-use App\Http\Controllers\Controller;
 
 class Profile extends Controller
 {
-    use UpdateProfile, FetchProfile;
+    use UpdateProfile, FetchProfile, Wallet;
     
     /**
      * @var Illuminate\Http\Response $response
