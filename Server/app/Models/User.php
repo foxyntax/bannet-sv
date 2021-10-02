@@ -26,8 +26,10 @@ class User extends Authenticatable
         'full_name',
         'tell',
         'password',
+        'otp',
         'meta',
-        'is_admin'
+        'is_admin',
+        'is_disabled'
     ];
 
     /**
@@ -38,6 +40,7 @@ class User extends Authenticatable
     protected $hidden = [
         'is_admin',
         'password',
+        'otp',
         'created_at',
         'updated_at'
     ];
@@ -54,7 +57,8 @@ class User extends Authenticatable
                 'province'   => null,
                 'city'       => null,
                 'address'    => null,
-                'postal_code'=> null
+                'postal_code'=> null,
+                'phone'      => null
             ],
             'financial' => [
                 'shabaa'        => null,
@@ -64,14 +68,16 @@ class User extends Authenticatable
             ],
             'scores'    => [
                 //* Scores example when it has been filled *//
-                // ['sender_id' => null, 'rate' => 1, 'desc' => '', 'is_seller' => 0]
+                // ['to' => 2, 'from' => 1, 'sender' => 'میلاد محمدی', 'receiver' => 'محمد محمدی', 'contract_id' => 5, 'rate' => 1, 'desc' => '', 'is_seller' => 0, 'created_at => '']
             ],
             'favorites' => [
                 //* Store Product ID
                 // [5,95,64]
             ]
         ],
-        'is_admin'   => 0
+        'otp'        => null,
+        'is_admin'   => 0,
+        'is_disabled'=> 0
     ];
 
     /**

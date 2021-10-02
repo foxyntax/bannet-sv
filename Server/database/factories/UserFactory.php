@@ -27,6 +27,7 @@ class UserFactory extends Factory
             'full_name' => $this->faker->name(),
             'tell'      => '09' . rand(1, 3) . rand(1000000, 9999999),
             'password'  => null,
+            'otp'       => null,
             'meta'  => [
                 'personal'  => [
                     'avatar'     => null,
@@ -56,7 +57,8 @@ class UserFactory extends Factory
                 'scores'    => $this->get_scores(),
                 'favorites' => $this->get_fav()
             ],
-            'is_admin'   => 0
+            'is_admin'   => 0,
+            'is_disabled'=> 0
         ];
     }
 
@@ -69,10 +71,12 @@ class UserFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'tell'      => '09156284764',
-                'password'  => Hash::make('password'),
-                'is_admin'  => 1,
-                'meta'      => []
+                'tell'       => '09156284764',
+                'password'   => Hash::make('password'),
+                'otp'        => null,
+                'is_admin'   => 1,
+                'is_disabled'=> 0,
+                'meta'       => []
             ];
         });
     }
@@ -84,16 +88,20 @@ class UserFactory extends Factory
      */
     public function get_scores()
     {
-        $indexes = rand(0, 10);
+        $indexes = rand(0, 30);
         $scores = [];
 
         for ($i=0; $i <= $indexes; $i++) { 
             array_push($scores, [
-                'sender_id' => rand(1, 50),
-                'rate'      => rand(0, 5),
-                'desc'      => $this->faker->sentence(rand(3, 6)),
-                'is_seller' => rand(0, 1)]
-            );
+                'to'            => rand(1, 50),
+                'from'          => rand(1, 50),
+                'sender'        => $this->faker->name(),
+                'receiver'      => $this->faker->name(),
+                'is_seller'     => rand(0, 1),
+                'contract_id'   => rand(1, 500),
+                'rate'          => rand(0, 5),
+                'desc'          => $this->faker->sentence(rand(3, 6)),
+            ]);
         }
 
         return $scores;
