@@ -43,8 +43,8 @@ class Contract extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'customer_id'    => 'integer|required|bail',
-                'contract_id'=> 'integer|required|bail'
+                'customer_id'   => 'integer|required|bail',
+                'contract_id'   => 'integer|required|bail'
             ]);
     
             if($validator->fails()) {
@@ -57,8 +57,8 @@ class Contract extends Controller
             $this->contract = UserContract::find($request->contract_id);
 
             // get user's and seller's wallet
-            $seller_wallet = UserWallet::select('available_balance')->where('user_id', $this->contract->customer_id)->first();
-            $customer_wallet = UserWallet::find($request->customer_id);
+            $seller_wallet = UserWallet::select('available_balance')->where('user_id', $this->contract->user_id)->first();
+            $customer_wallet = UserWallet::select('available_balance', 'pending_balance')->where('user_id', $request->customer_id)->first();
 
             // Update customer's wallet
             $customer_wallet->pending_balance = $customer_wallet->pending_balance - $this->contract->meta['cost'];
@@ -69,14 +69,14 @@ class Contract extends Controller
             $seller_wallet->save();
 
             // Take a notice customer and seller by sending SMS
-            // $this->notice_withdrawal();
+            // // $this->notice_withdrawal();
 
             // Change status
             $this->contract->status = 2;
             $this->contract->save();
 
             return response()->json([
-                'status' => true
+                'status' => $this->contract->meta['cost']
             ], 200);
             
         } catch (\Throwable $th) {
@@ -141,16 +141,16 @@ class Contract extends Controller
 
             if (is_null($searched) && empty($searched)) {
                 $this->contract = UserContract::where('user_contracts.status', $status)
-                                              ->select('user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
+                                              ->select('user_contracts.id', 'user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
                                               ->join('users', 'user_contracts.user_id', '=', 'users.id')
                                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id');
             } else {
                 $this->contract = UserContract::where('user_contracts.status', $status)
                                               ->where(function($query) use ($searched) {
                                                   $query->where('users.full_name', 'like', "%$searched%")
-                                                        ->orWhere('users.full_name', 'like', "%$searched%");
+                                                        ->orWhere('users.tell', 'like', "%$searched%");
                                               })
-                                              ->select('user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
+                                              ->select('user_contracts.id', 'user_contracts.meta', 'users.full_name', 'users.tell', 'core_products.features', 'core_products.type')
                                               ->join('users', 'user_contracts.user_id', '=', 'users.id')
                                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id');
                                               
@@ -158,8 +158,8 @@ class Contract extends Controller
             }
             
             return response()->json([
-                'contract'  => $this->contract->offset($offset)->limit($limit)->get(),
-                'count'     => $this->contract->count()
+                'count'     => $this->contract->count(),
+                'contract'  => $this->contract->offset($offset)->limit($limit)->get()
             ], 200);
             
         } catch (\Throwable $th) {
