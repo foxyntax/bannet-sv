@@ -13,12 +13,12 @@ use Illuminate\Support\Facades\Validator;
 /**
  ** Here I show the methods that I need to develop 
  *
- // 1. Ffetch
- // 2. update
- // 3. delete membership
+ // 1. Fetch
+ // 2. Details
+ // 3. Update
+ // 4. Delete membership
  * 
  */
-
 
 class Membership extends Controller
 {
@@ -53,8 +53,32 @@ class Membership extends Controller
             }
                     
             return response()->json([
-                'membership'=> $this->membership->offset($offset)->limit($limit)->get(),
-                'count'     => $this->membership->count()
+                'count'     => $this->membership->count(),
+                'membership'=> $this->membership->offset($offset)->limit($limit)->get()
+            ], 200);
+            
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     ** Fetch membership details
+     * 
+     * @param int $membership_id
+     * @return Illuminate\Http\Response
+     */
+    public function fetch_detail(int $membership_id ) : object
+    {
+        try {
+
+            $this->membership = CoreMembership::where('id', $membership_id)->first();
+                    
+            return response()->json([
+                'membership'=> $this->membership->get(),
+                'using_rate'=> UserWallet::where('membership_id', $membership_id)->count()
             ], 200);
             
         } catch (\Throwable $th) {
@@ -129,9 +153,11 @@ class Membership extends Controller
                     'error' => $validator->errors()
                 ], 500);
             }
+
+            $updated = [];
             
             if ($request->has('title'))  $updated['title']          = $request->title;
-            if ($request->has('status'))  $updated['status']        = ($request->status) ? 1 : 0;
+            if ($request->has('status'))  $updated['status']        = $request->status;
             if ($request->has('cost'))   $updated['meta->cost']     = $request->cost;
             if ($request->has('days'))   $updated['days']           = $request->days;
 
