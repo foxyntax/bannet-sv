@@ -29,6 +29,26 @@ class Membership extends Controller
     protected $membership;
 
     /**
+     ** Fetch Available Memberships
+     * 
+     * @return Illuminate\Http\Response
+     */
+    public function fetch_available_memberships() : object
+    {
+        try {
+            $this->response = CoreMembership::where('status', 1)->get();
+
+            return response()->json([
+                'memberships' => $this->response
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error'     => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      ** Check user's membership that is it expired or not? 
      * 
      * @param int $user_id
@@ -54,7 +74,8 @@ class Membership extends Controller
                         ? response()->json(['status' => false], 200)
                         : false;
 
-                    // Then you must delete all fetched data about old membership in client
+                    // Then you must delete all fetched data about old membership in client,
+                    // however I'll do it in fetch_user_data if you use it
                 }
             }
             
@@ -69,17 +90,17 @@ class Membership extends Controller
         }
         
     }
-
+    
     /**
      ** Buy membership
      * 
-     * @param int $user_id
-     * @param int $membership_id
+     * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request contract_id
      */
-    public function buy_membership_from_wallet(int $user_id, int $membership_id) : object
+    public function buy_membership_from_wallet(Request $request) : object
     {
         try {
-            return $this->set_membership($user_id, $membership_id, true, true);
+            return $this->set_membership($request->user_id, $request->membership_id, true, true);
         } catch (\Throwable $th) {
             return response()->json([
                 'error' => $th->getMessage()
