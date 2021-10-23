@@ -17,7 +17,6 @@
         "laravel/sanctum": "^2.9",
         "laravel/tinker": "^2.5",
         "morilog/jalali": "3.*",
-        "nwidart/laravel-modules": "^8.2",
         "shetabit/payment": "^4.0"
     },
     "require-dev": {
