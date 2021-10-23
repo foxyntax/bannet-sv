@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use Carbon\Carbon;
+use App\Models\User;
 use App\Models\CoreProduct;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
@@ -17,6 +18,16 @@ class ProductDetail extends Controller
      * @var object $response
      */
     protected $response;
+
+
+    public function __construct() {
+        $this->response['ads']          = [];
+        $this->response['my_ads']       = [];
+        $this->response['ad_avg']       = [];
+        $this->response['is_saved']     = [];
+        $this->response['ad_count']     = 0;
+        $this->response['tyre_count']   = 0;
+    }
 
     /**
      ** Fetch Lists By Features
@@ -33,16 +44,20 @@ class ProductDetail extends Controller
             $this->fetch_product_information($product_id);
 
             // Fetch Advertisments of product
-            $this->fetch_contracts($product_id);
+            $this->fetch_ads($product_id);
 
-            // Fetch ads of user, if user exists
+            // Fetch ads of user and if it's a favorite product, also if user exists
             if($user_id != 0) {
-                $this->fetch_user_contract($product_id, $user_id);
+                $user = User::where('id', $user_id)->count();
+                if ($user !== 0) {
+                    $this->fetch_user_contract($product_id, $user_id);
+                    $this->is_favorite($product_id, $user_id);
+                }
             }
 
-            return response()->json([
-                'data'     => $this->response
-            ], 200);
+            return response()->json(
+                $this->response
+            , 200);
 
         } catch (\Throwable $th) {
                         
@@ -65,37 +80,38 @@ class ProductDetail extends Controller
     }
 
     /**
-     ** Fetch contracts by product
+     ** Fetch ads by product
      *  
      * @param int $product_id
      * @return void
      */
-    protected function fetch_contracts(int $product_id)
+    protected function fetch_ads(int $product_id)
     {
-        // Fetch all contracts 
+        // Fetch all ads 
         /**
-         /* Note: You have to hide contracts that logged user have them in client side.
+         /* Note: You have to hide ads that logged user have them in client side.
          */
-        $this->response['contracts'] = UserContract::with('user')
-                                                    ->where([
-                                                        'product_id' => $product_id,
-                                                        'status'     => 0
-                                                    ])
-                                                    ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
-                                                    ->get();
+        $this->response['ads'] = UserContract::with('user')
+                                                ->where([
+                                                    'product_id' => $product_id,
+                                                    'status'     => 0
+                                                ])
+                                                // ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                                                ->get();
         $this->get_avg_cost();
     }
 
     /**
      ** Fetch user information about the product
      *  
+     * @param int $product_id
      * @param int $user_id
      * @return void
      */
     protected function fetch_user_contract(int $product_id, int $user_id)
     {
-        // Fetch all contracts
-        $this->response['my_contracts'] = UserContract::where([
+        // Fetch all ads
+        $this->response['my_ads'] = UserContract::where([
                                                             'product_id' => $product_id,
                                                             'user_id'    => $user_id
                                                         ])
@@ -118,11 +134,11 @@ class ProductDetail extends Controller
 
         //         if($id == $product_id) {
 
-        //             $this->response['my_contracts'] = true; break;
+        //             $this->response['my_ads'] = true; break;
 
         //         }
 
-        //         $this->response['my_contracts'] = false;
+        //         $this->response['my_ads'] = false;
         //     }
 
         // } else {
@@ -133,22 +149,38 @@ class ProductDetail extends Controller
     }
 
     /**
-     ** Get Average cost of contracts
+     ** Get Average cost of ads
      * 
      * @return void
      */
     protected function get_avg_cost()
     {
-        $total = 0;
-        $this->response['contract_count'] =  count($this->response['contracts']);
+        $totalCost = 0;
+        $this->response['tyre_count'] = 0;
+        $this->response['ad_count'] = count($this->response['ads']);
 
-        if($this->response['contract_count'] > 0) {
-            foreach ($this->response['contracts'] as $contract) {
-                $total += (int) $contract->meta['cost'];
+        if($this->response['ad_count'] > 0) {
+            foreach ($this->response['ads'] as $contract) {
+                $totalCost                    += (int) $contract->meta['cost'];
+                $this->response['tyre_count'] += (int) $contract->meta['count'];
             }
 
-            $this->response['contract_avg'] = round($total / $this->response['contract_count']);
-
+            $this->response['ad_avg'] = round($totalCost / $this->response['tyre_count']);
+        } else {
+            $this->response['ad_avg'] = 0;
         }
+    }
+
+    /**
+     ** Is a favorite product?
+     *  
+     * @param int $product_id
+     * @param int $user_id
+     * @return void
+     */
+    protected function is_favorite(int $product_id, int $user_id)
+    {
+        $meta_col = User::where('id', $user_id)->select('meta')->first();
+        $this->response['is_saved'] = (in_array($product_id, $meta_col->meta['favorites']));
     }
 }
