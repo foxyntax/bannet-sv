@@ -7,7 +7,7 @@ use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
-use Modules\Settings\Models\CoreOption;
+use App\Models\CoreOption;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException as ModelNotFound;
 
@@ -64,7 +64,7 @@ class Products extends Controller
                 'type'          => 'integer|required|bail',
                 'name'          => 'string|required|bail',
                 'design_name'   => 'string|required|bail',
-                'diameter'      => 'integer|required|bail',
+                'diameter'      => 'required|bail',
                 'color'         => 'string|required|bail',
                 'country'       => 'string|required|bail',
                 'for_back'      => 'boolean|required|bail',
@@ -74,7 +74,8 @@ class Products extends Controller
                 'speed'         => 'integer|required|bail',
                 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
-                'weight'        => 'integer|required|bail'
+                'weight'        => 'integer|required|bail',
+                'src'           => 'mimes:jpg,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -89,14 +90,18 @@ class Products extends Controller
             $this->product->features['src'] = [];
             
             // Upload src of pictures
-            foreach ($request->file('src') as $src) {
-                array_push($this->product->features['src'], $request->file($src)->store('products/' . $request->name));
+            if(is_array($request->file('src'))) {
+                foreach ($request->file('src') as $src) {
+                    array_push($this->product->features['src'], $src->store('product/' . $request->name));
+                }
+            } else {
+                array_push($this->product->features['src'], $request->file('src')->store('product/' . $request->name));
             }
 
             $this->product->save();
 
             return response()->json([
-                'status' => true
+                'status'    => true
             ], 200);
 
         } catch (\Throwable $th) {
@@ -151,7 +156,8 @@ class Products extends Controller
                 'speed'         => 'integer|required|bail',
                 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
-                'weight'        => 'integer|required|bail'
+                'weight'        => 'integer|required|bail',
+                'src'           => 'mimes:jpg,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -176,15 +182,19 @@ class Products extends Controller
 
             // Upload new images - if exist
             if ($request->has('new_src')) {
-                foreach ($request->file('new_src') as $src) {
-                    $path = $request->file($src)->store('products/' . $request->name);
-                    array_push($this->product->features['src'], $path);
+                if(is_array($request->file('new_src'))) {
+                    foreach ($request->file('new_src') as $src) {
+                        array_push($this->product->features['src'], $src->store('product/' . $request->name));
+                    }
+                } else {
+                    array_push($this->product->features['src'], $request->file('new_src')->store('product/' . $request->name));
                 }
             }
 
             $this->product->save();
 
             return response()->json([
+                'product'=> $this->product,
                 'status' => true
             ], 200);
 
@@ -261,7 +271,7 @@ class Products extends Controller
 
             if(is_null($searched) && empty($searched)) {
                 $this->product = CoreProduct::where('type', $type)
-                                            ->select('features');
+                                            ->select('id', 'features');
             } else {
                 $this->product = CoreProduct::where('type', $type)
                                             ->where(function($query) use ($searched) {
@@ -269,12 +279,12 @@ class Products extends Controller
                                                     ->orWhere('features->design_name', 'like', "%$searched%")
                                                     ->orWhere('features->brand', 'like', "%$searched%");
                                             })
-                                            ->select('features');
+                                            ->select('id', 'features');
             }
             
             return response()->json([
-                'product'   => $this->product->offset($offset)->limit($limit)->get(),
-                'count'     => $this->product->count()
+                'count'     => $this->product->count(),
+                'product'   => $this->product->offset($offset)->limit($limit)->get()
             ], 200);
             
         } catch (\Throwable $th) {
