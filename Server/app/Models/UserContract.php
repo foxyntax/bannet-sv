@@ -36,7 +36,7 @@ class UserContract extends Model
      *
      * @var array
      */
-    protected $hidden = ['product_id', 'user_id'];
+    // protected $hidden = [];
 
     /**
      * The model's default values for attributes.
