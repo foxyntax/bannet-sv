@@ -5,9 +5,10 @@ namespace App\Traits\Profile;
 use App\Models\User;
 use App\Models\UserWallet;
 use App\Models\CoreProduct;
-use App\Models\CoreMembership;
 use Illuminate\Http\Request;
+use App\Models\CoreMembership;
 use Illuminate\Support\Facades\Storage;
+use App\Http\Controllers\User\Membership;
 use Illuminate\Support\Facades\Validator;
 
 trait FetchProfile {
@@ -16,50 +17,62 @@ trait FetchProfile {
      ** Fetch Lists By Features
      * 
      * @param int $user_id
+     * @return Illuminate\Http\Request profile
      * @return Illuminate\Http\Request wallet
      * @return Illuminate\Http\Request membership
      * @return Illuminate\Http\Request receipt
      * @return Illuminate\Http\Request contract
+     * @return Illuminate\Http\Request scores
      * @return Illuminate\Http\Response
      */
     public function fetch_user_data(int $user_id = null, Request $request) : object
     {
         try {
-            
+
+            $this->user = User::find($user_id);
 
             //  Get basic user's data
-            $this->response['profile'] = User::find($user_id);
+            if($request->has('profile')) {
+                $this->response['profile'] = $this->user;
+
+                // Remove favorites if you don't want them
+                if (!$request->has('favorites') && $request->has('profile')) {
+                    unset($this->response['profile']['meta']['favorites']);
+                }
+
+                // Remove scores if you don't want them
+                if (!$request->has('scores') && $request->has('profile')) {
+                    unset($this->response['profile']['meta']['scores']);
+                }
+            }
+
+            // Is Neccesary 
 
             // Get User's wallet
             if($request->has('wallet')) {
-                $this->response['wallet'] = UserWallet::where('user_id', $user_id)->first();
-
-                // Get User's membership data
-                if($request->has('membership')) {    
-                    $this->response['wallet']['membership'] = $this->response['wallet']->core_membership;
-                }
+                $this->fetch_wallet($user_id);
             }
 
             // Get user's receipt
             if($request->has('receipt')) {
                 // $this->response['receipt'] = CoreIncoming::where('user_id', $user_id)->get();
-                $this->response['receipt'] = $this->response['profile']->core_transaction;
+                $this->response['receipt'] = $this->user->core_transaction;
             }
 
             // Get user's contracts
             if($request->has('contract')) {
                 // $this->response['contract'] = UserContract::where('user_id', $user_id)->get();
-                $this->response['contract'] = $this->response['profile']->user_contracts;
+                $this->response['contract'] = $this->user->user_contracts;
             }
 
             // Get user's favorites products
             if($request->has('favorites')) {
-                $this->fetch_favorites($this->response['profile']->meta['favorites']);
+                $this->fetch_favorites($this->user->meta['favorites']);
             }
 
-            return response()->json([
-                'user' => $this->response
-            ], 200);
+            return response()->json(
+                $this->response
+            , 200);
 
         } catch (\Throwable $th) {
                         
@@ -90,21 +103,29 @@ trait FetchProfile {
             ], 500);
         }
     }
-
     
     /**
-     ** Fetch Available Memberships
+     ** Fetch user's wallet
      * 
-     * @return Illuminate\Http\Response
+     * @param int user_id
+     * @return void
      */
-    public function fetch_available_memberships() : object
+    protected function fetch_wallet(int $user_id)
     {
         try {
-            $this->response = CoreMembership::where('status', 1)->get();
+            $this->response['wallet'] = UserWallet::where('user_id', $user_id)->first();
 
-            return response()->json([
-                'memberships' => $this->response
-            ], 200);
+            // Check if has membershop
+            $has_membership = Membership::is_memebrship_expired($user_id, 1);
+
+            // Get User's membership data
+            if($has_membership && $request->has('membership')) {
+                $this->response['wallet']->core_membership;
+            } else if (! $has_membership) {
+                $this->response['wallet']->membership_id = null;
+                $this->response['wallet']->expired_at = null;
+                $this->response['wallet']->save();
+            }
         } catch (\Throwable $th) {
             return response()->json([
                 'error'     => $th->getMessage()
