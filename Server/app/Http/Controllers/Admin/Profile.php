@@ -66,7 +66,7 @@ class Profile extends Controller
                 $this->user = User::where('users.is_admin', $is_admin)
                                   ->where(function($query) use ($searched) {
                                       $query->where('users.full_name', 'like', "%$searched%")
-                                          ->orWhere('users.full_name', 'like', "%$searched%");
+                                          ->orWhere('users.tell', 'like', "%$searched%");
                                   });
             }
 
