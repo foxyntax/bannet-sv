@@ -26,24 +26,25 @@ Route::namespace('User')->prefix('user')->group(function() {
             Route::post('/withdrawal/pending-balance', 'Contract@withdrawal_pending_balance');
             Route::post('/cancel', 'Contract@cancel');
             Route::post('/review', 'Contract@review_user');
+            Route::patch('/buy', 'Contract@buy_ad_by_using_wallet');
         });
     
         Route::prefix('membership')->group(function() {
-            Route::get('/fetch', 'Profile@fetch_available_memberships');
+            Route::get('/fetch', 'Membership@fetch_available_memberships');
             Route::get('/check/{user_id}', 'Membership@is_memebrship_expired');
-            Route::patch('/buy/{user_id}/{membership_id}', 'Membership@buy_membership_from_wallet');
+            Route::patch('/buy', 'Membership@buy_membership_from_wallet');
         });
     
         Route::prefix('profile')->group(function() {
             Route::get('/fetch/{user_id}', 'Profile@fetch_user_data');
-            Route::patch('/update/{user_id}/{mode}', 'Profile@update_user_data');
+            Route::post('/update/{user_id}/{mode}', 'Profile@update_user_data');
             Route::patch('/withdrawal/{user_id}', 'Profile@withdrawal_request');
         });
     });
     
     Route::prefix('store')->group(function() {
         Route::prefix('fetch')->group(function () {
-            Route::get('/product/{offset}/{limit}/{get_filters?}', 'Products@render_product_page');
+            Route::get('/product/{offset}/{limit}/{city}/{get_filters?}', 'Products@render_product_page');
             Route::get('/detail/{product_id}/{user_id}', 'ProductDetail@render_product_detail');
         });
     });
@@ -67,6 +68,7 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
     // All tested
     Route::prefix('membership')->group(function() {
         Route::get('/fetch/{status}/{offset}/{limit}/{searched?}', 'Membership@fetch');
+        Route::get('/detail/{membership_id}', 'Membership@fetch_detail');
         Route::post('/create', 'Membership@create');
         Route::patch('/update/{membership_id}', 'Membership@update');
         Route::delete('/delete/{membership_id}', 'Membership@delete');
@@ -86,7 +88,7 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
         });
 
         Route::post('/create', 'Products@create_product');
-        Route::patch('/update/{product_id}', 'Products@update_product');
+        Route::post('/update/{product_id}', 'Products@update_product');
         // All tested
         Route::delete('/delete/{product_id}', 'Products@delete_product');
     });
@@ -111,14 +113,21 @@ Route::namespace('Transaction')->prefix('transaction')->group(function() {
     Route::post('/verify', 'Transactions@verify_payment');
 });
 
-// Register
+// AUTH
 Route::namespace('Auth')->prefix('auth')->group(function () {
     
+    // Register
     Route::prefix('register')->group(function () {
         Route::post('/with-pass', 'RegisterController@register_by_pass');
         Route::post('/without-pass', 'RegisterController@register_without_pass');
         // if you have extra actions like create new records in another database,
         // please develope them whitin the above functions
+    });
+
+    // OTP Actions
+    Route::prefix('otp')->group(function () {
+        Route::post('/check', 'LoginController@check_user'); // [if you wana check user existance before login/register and send a token]
+        Route::post('/send', 'LoginController@send_otp_token'); // [if you just wanna send sms to user]
     });
     
     // Login
@@ -127,8 +136,6 @@ Route::namespace('Auth')->prefix('auth')->group(function () {
         // Route::post('/by-mail', 'LoginController@logout_by_mail');
         Route::post('/basic', 'LoginController@login_basic');
         Route::prefix('otp')->group(function () {
-            Route::post('/check', 'LoginController@check_user'); // step one [if you want register after check]
-            Route::post('/send', 'LoginController@send_otp_token'); // step one [if you just want to send sms to client]
             Route::post('/verify', 'LoginController@verify_user'); // step two
         });
     
@@ -153,7 +160,7 @@ Route::namespace('Auth')->prefix('auth')->group(function () {
     });
     
     Route::prefix('api-token')->group(function () {
-        Route::post('check', 'ApiToken@check_api_token');
+        Route::post('check/{mode}', 'ApiToken@check_api_token');
     });
 });
 
