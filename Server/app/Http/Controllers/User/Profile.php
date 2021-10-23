@@ -17,6 +17,11 @@ class Profile extends Controller
     protected $response;
 
     /**
+     * @var Illuminate\Http\Requesr $request
+     */
+    protected $request;
+
+    /**
      * @var int $user
      */
     protected $user;
