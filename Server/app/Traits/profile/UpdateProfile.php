@@ -24,6 +24,7 @@ trait UpdateProfile {
     public function update_user_data(int $user_id, string $mode = 'switcher', Request $request) : object
     {
         try {
+
             // Set reponse true before any progress to avoid get unnecessary error
             $this->response = true;
 
@@ -31,6 +32,9 @@ trait UpdateProfile {
             $this->user = User::find($user_id);
 
             switch ($mode) {
+                case 'basic':
+                    $this->update_user_basic($request);
+                    break;
                 case 'personal':
                     $this->update_user_personal($request);
                     break;
@@ -50,17 +54,53 @@ trait UpdateProfile {
             // Catch err if there are any problem in top funcs
             if(! $this->response || is_null($this->response)) {
                 return response()->json([
-                    'ersror' => $this->response,
-                    'error' => $this->validator->errors()
+                    'status' => $this->response,
+                    'error'  => $this->validator->errors()
                 ], 500);
             }
 
-            return response()->json([
-                'test' => $this->user->meta
-            ], 200);
+            if ($mode !== 'switcher' && $mode !== 'basic') {
+                return response()->json($this->user->meta[$mode], 200);
+            } else if ($mode === 'basic') {
+                return response()->json([
+                    'full_name' => $this->user->full_name
+                ], 200);
+            } else {
+                return response()->json($this->response, 200);
+            }
         } catch (\Throwable $th) {
             return response()->json([
                 'error'     => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     ** Update user's basic information
+     *
+     * @param Illuminate\Http\Request full_name
+     * @return void
+     */
+    protected function update_user_basic($request)
+    {
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'full_name' => 'string'
+            ]);
+    
+            if($validator->fails()) {
+                $this->response = false;
+                $this->validator = $validator->errors(); return;
+            }
+
+            // Save user's basic information
+            $this->user->full_name = ($request->has('full_name')) ? $request->full_name : $this->user->full_name;
+
+            $this->user->save();
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
             ], 500);
         }
     }
@@ -84,6 +124,7 @@ trait UpdateProfile {
                 'province'      => 'string|bail',
                 'city'          => 'string|bail',
                 'address'       => 'string|bail',
+                'phone'         => 'string|bail',
                 'postal_code'   => 'string|size:10|bail',
             ]);
     
@@ -95,9 +136,9 @@ trait UpdateProfile {
             // Delete avaialbe avatar first, if $request has new avatar
             if($request->has('avatar') && ! is_null($this->user->meta['personal']['avatar'])) {
                 Storage::delete($this->user->meta['personal']['avatar']);
-                $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/$this->user->id");
+                $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/".$this->user->id);
             } else if ($request->has('avatar')) {
-                $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/$this->user->id");
+                $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/".$this->user->id);
             }
 
             // Save user's personal information
@@ -131,7 +172,7 @@ trait UpdateProfile {
 
         try {
             $this->validator = Validator::make($request->all(), [
-                'debit_card'        => 'mimes:jpg,hevc,heif,png|bail',
+                'debit_card'        => 'mimes:jpg,hevc,heif,image/png|bail',
                 'national_id'       => 'mimes:jpg,hevc,heif,png|bail',
                 'license_card'      => 'mimes:jpg,hevc,heif,png|bail',
                 'debit_card_value'  => 'string|size:12|bail',
@@ -145,16 +186,19 @@ trait UpdateProfile {
                 $this->validator = $validator->errors(); return;
             }
 
+            // Get request instance for helpers
+            $this->request = $request;
+
             // Save files if it is needed
             $this->save_updated_financial_file($request->has('debit_card'), 'debit_card');
             $this->save_updated_financial_file($request->has('license_card'), 'license_card');
             $this->save_updated_financial_file($request->has('national_id'), 'national_id');
 
             // Save user's financial information
-            $this->save_updated_value($request->debit_card_value, $request->has('debit_card_value'), 'financial', 'debit_card', 'value');
-            $this->save_updated_value($request->national_id_value, $request->has('national_id_value'), 'financial', 'national_id', 'value');
-            $this->save_updated_value($request->license_card_value, $request->has('license_card_value'), 'financial', 'license_card', 'value');
-            $this->save_updated_value($request->shabaa, $request->has('shabaa'), 'financial', 'shabaa');
+            $this->save_updated_value($request->has('debit_card_value'), 'debit_card_value', 'financial', 'debit_card', 'value');
+            $this->save_updated_value($request->has('national_id_value'), 'national_id_value', 'financial', 'national_id', 'value');
+            $this->save_updated_value($request->has('license_card_value'), 'license_card_value', 'financial', 'license_card', 'value');
+            $this->save_updated_value($request->has('shabaa'), 'shabaa', 'financial', 'shabaa');
 
             $this->user->save();
         } catch (\Throwable $th) {
@@ -224,11 +268,18 @@ trait UpdateProfile {
                 $this->validator = $validator->errors(); return;
             }
 
-            // Save user's favorites information
+            // Convert to Array
             if(!is_array($this->user->meta['favorites'])) {
                 $this->user->meta['favorites'] = explode(',', (string) $this->user->meta['favorites']);
             }
-            array_push($this->user->meta['favorites'], (string) $request->product_id);
+
+            // Save or Remove ID
+            if (in_array($request->product_id, $this->user->meta['favorites'])) {
+                $key = array_search($request->product_id, $this->user->meta['favorites']);
+                unset($this->user->meta['favorites'][$key]);
+            } else {
+                array_push($this->user->meta['favorites'], $request->product_id);
+            }
 
             $this->user->save();
         } catch (\Throwable $th) {
@@ -277,26 +328,33 @@ trait UpdateProfile {
      */
     protected function save_updated_financial_file($condition, $part)
     {
-        if($condition) {
-            $this->user->meta['financial'][$part]['img']  = $request->file($part)->store("users/$this->user->id");
+        if($condition && $this->request->has($part)) {
+            $this->user->meta['financial'][$part]['img']  = $this->request->file($part)->store("users/" . $this->user->id . "/$part");
+            // Reset validation status
+            $this->user->meta['financial'][$part]['validated'] = 0;
         }
     }
     
     /**
      ** Mutate to upload files and save it in financial section
      * 
-     * @param string $part
+     * @param string $req_name
      * @return void
      */
-    protected function save_updated_value($req, bool $condition, string $grand_parent, string $parent = '', string $child = '')
+    protected function save_updated_value(bool $condition, string $req_name, string $grand_parent, string $parent = '', string $child = '')
     {
         if($condition) {
             if($parent === '') {
-                $this->user->meta[$grand_parent] = $req;
+                $this->user->meta[$grand_parent] = $this->request->input($req_name);
             } else if ($child === '') {
-                $this->user->meta[$grand_parent][$parent] = $req;
+                $this->user->meta[$grand_parent][$parent] = $this->request->input($req_name);
             } else {
-                $this->user->meta[$grand_parent][$parent][$child] = $req;
+                $this->user->meta[$grand_parent][$parent][$child] = $this->request->input($req_name);
+
+                if ($grand_parent === 'financial') {
+                    // Reset validation status
+                    $this->user->meta[$grand_parent][$parent]['validated'] = 0;
+                }
             }
         }
     }
