@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\User;
 
+use Carbon\Carbon;
+use App\Models\CoreOption;
 use App\Models\CoreProduct;
+use App\Models\UserContract;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
-use Modules\Settings\Models\CoreOption;
 use Illuminate\Support\Facades\Validator;
 
 class Products extends Controller
@@ -46,6 +48,7 @@ class Products extends Controller
      * @param int $offset
      * @param int $limit
      * @param int $get_filter
+     * @param int $city
      * @param Illuminate\Http\Request $type
      * @param Illuminate\Http\Request $full
      * @param Illuminate\Http\Request $searched
@@ -58,7 +61,7 @@ class Products extends Controller
      * @param Illuminate\Http\Request $tire_height
      * @return Illuminate\Http\Response
      */
-    public function render_product_page($offset, $limit, $get_filters = 0, Request $request) : object
+    public function render_product_page(int $offset, int $limit, string $city, int $get_filters = 0, Request $request) : object
     {
         try {
 
@@ -80,16 +83,17 @@ class Products extends Controller
             }
 
             if($this->safe_request($request)) {
-                $this->fetch_products($offset, $limit, $request);
+                $this->fetch_products($offset, $limit, $city, $request);
 
                 // Fetch Filter Items
                 if($get_filters == 1) {
                     $this->fetch_filter_items();
                 }
 
-                return response()->json([
-                    'data' => $this->response
-                ], $this->http);
+                // Decode Features column
+                $this->decode_features();
+
+                return response()->json($this->response, $this->http);
             } else {
                 return response()->json([
                     'error' => 'You used atleast 2 types of request at same time.'
@@ -135,25 +139,24 @@ class Products extends Controller
      * @param Illuminate\Http\Request $request
      * @return object
      */
-    protected function fetch_products($offset, $limit, Request $request)
+    protected function fetch_products($offset, $limit, $city, Request $request)
     {
         if($request->has('full')) {
 
-            $this->response['products'] = CoreProduct::where('type', $request->type)->offset($offset)->limit($limit)->get();
+            $this->fetch_lists($offset, $limit, $city, $request);
 
         } else if($request->has('searched')) {
 
-            $this->fetch_searched_lists($offset, $limit, $request->searched);
+            $this->fetch_searched_lists($offset, $limit, $city, $request);
 
         } else if($request->has('filtered')) {
 
-            $this->fetch_filtered_lists($offset, $limit, $request);
+            $this->fetch_filtered_lists($offset, $limit, $city, $request);
 
         } else {
 
             $this->response = 'You used unavailable type request to fetch data or you didn\'t use any type in.';
             $this->http = 400;
-
         }
     }
 
@@ -165,11 +168,33 @@ class Products extends Controller
     protected function fetch_filter_items()
     {
         // get brands
-        $this->response['filters']['brands'] = CoreOption::where('option', 'saved_brand')->select('value')->first();
-        $this->response['filters']['width'] = CoreOption::where('option', 'saved_width')->select('value')->first();
-        $this->response['filters']['weight'] = CoreOption::where('option', 'saved_weight')->select('value')->first();
-        $this->response['filters']['height'] = CoreOption::where('option', 'saved_height')->select('value')->first();
-        $this->response['filters']['tire_height'] = CoreOption::where('option', 'saved_tire_height')->select('value')->first();
+        $this->response['filters']['brands'] = CoreOption::where('option', 'SAVED_BRAND')->select('value')->first();
+        $this->response['filters']['width'] = CoreOption::where('option', 'SAVED_WIDTH')->select('value')->first();
+        $this->response['filters']['weight'] = CoreOption::where('option', 'SAVED_WEIGHT')->select('value')->first();
+        $this->response['filters']['height'] = CoreOption::where('option', 'SAVED_HEIGHT')->select('value')->first();
+        $this->response['filters']['tyre_height'] = CoreOption::where('option', 'SAVED_TYRE_HEIGHT')->select('value')->first();
+    }
+
+    /**
+     ** fetch a product/products without any filters or search condition
+     *  
+     * @param int $offset
+     * @param int $limit
+     * @param string $city
+     * @param Illuminate\Http\Request $request
+     * @return void
+     */
+    protected function fetch_lists($offset, $limit, $city, $request)
+    {
+        $fechted = UserContract::where('meta->city', $city)
+                               ->where('status', 0)
+                            //    ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                               ->where('core_products.type', $request->type)
+                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                               ->select('product_id as id', 'features', 'type')
+                               ->distinct();
+        $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
+        $this->response['count'] = $fechted->count('product_id');
     }
 
 
@@ -178,18 +203,27 @@ class Products extends Controller
      *  
      * @param int $offset
      * @param int $limit
-     * @param Illuminate\Http\Request $searched
+     * @param string $city
+     * @param Illuminate\Http\Request $request
      * @return void
      */
-    protected function fetch_searched_lists($offset, $limit, $searched)
+    protected function fetch_searched_lists($offset, $limit, $city, $request)
     {
-        $this->response['products'] = CoreProduct::where('features->name', $searched)
-                                                    ->orWhere(function($query) use ($searched) {
-                                                        $query->where('features->design_name', $searched);
-                                                    })
-                                                    ->offset($offset)
-                                                    ->limit($limit)
-                                                    ->get();
+        $fechted = UserContract::where('meta->city', $city)
+                               ->where('status', 0)
+                               ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                               ->where('core_products.type', $request->type)
+                               ->where(function($query) use ($request) {
+                                    $query->where('features->name', 'like', "%$request->searched%")
+                                          ->orWhere('features->design_name', 'like', "%$request->searched%");
+                               })
+                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                               ->select('product_id as id', 'features', 'type')
+                               ->distinct();
+                               
+        $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
+        $this->response['count'] = $fechted->count('product_id');
+        $this->response['searched'] = $request->searched;
     }
 
     /**
@@ -197,45 +231,67 @@ class Products extends Controller
      * 
      * @param int $offset
      * @param int $limit
+     * @param string $city
      * @param Illuminate\Http\Request $request
      * @return void
      */
-    protected function fetch_filtered_lists($offset, $limit, $request)
+    protected function fetch_filtered_lists($offset, $limit, $city, $request)
     {
-        $this->response['products'] = CoreProduct::where(function($query) use ($request) {
+        $fechted = UserContract::where('meta->city', $city)
+                               ->where('status', 0)
+                               ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                               ->where('core_products.type', $request->type)
+                               ->where(function($query) use ($request) {
 
-                                                    if ($request->has('brand')) {
-                                                        $query->where('features->brand', $request->brand);
-                                                    }
+                                    if ($request->has('brand')) {
+                                        $query->where('features->brand', $request->brand);
+                                    }
 
-                                                    if ($request->has('width')) {
-                                                        $query->where('features->width', $request->width);
-                                                    }
+                                    if ($request->has('width')) {
+                                        $query->where('features->width', $request->width);
+                                    }
 
-                                                    if ($request->has('weight')) {
-                                                        $query->where('features->weight', $request->weight);
-                                                    }
-                                                    
-                                                    if ($request->has('height')) {
-                                                        $query->where('features->height', $request->height);
-                                                    }
+                                    if ($request->has('weight')) {
+                                        $query->where('features->weight', $request->weight);
+                                    }
+                                    
+                                    if ($request->has('height')) {
+                                        $query->where('features->height', $request->height);
+                                    }
 
-                                                    if ($request->has('tire_height')) {
-                                                        $query->where('features->tire_height', $request->tire_height);
-                                                    }
+                                    if ($request->has('tire_height')) {
+                                        $query->where('features->tire_height', $request->tire_height);
+                                    }
 
-                                                    if ($request->has('for_back')) {
-                                                        $query->where('features->for_back', $request->for_back);
-                                                    }
+                                    if ($request->has('for_back')) {
+                                        $query->where('features->for_back', $request->for_back);
+                                    }
 
-                                                    if ($request->has('for_front')) {
-                                                        $query->where('features->for_front', $request->for_front);
-                                                    }
-                                                    
-                                                })
-                                                ->offset($offset)
-                                                ->limit($limit)
-                                                ->get();
+                                    if ($request->has('for_front')) {
+                                        $query->where('features->for_front', $request->for_front);
+                                    }
+                                    
+                                })
+                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                               ->select('product_id as id', 'features', 'type')
+                               ->distinct();
+        $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
+        $this->response['count'] = $fechted->count('product_id');
+    }
+    
+    /**
+     ** Decode Features column
+     * 
+     * @return void
+     */
+    protected function decode_features()
+    {
+        if (count($this->response['products']) !== 0) {
+            $this->response['products'] = collect($this->response['products'])->map(function ($item) {
+                $item->features = json_decode($item->features);
+                return $item;
+            });
+        }
     }
 
 }
