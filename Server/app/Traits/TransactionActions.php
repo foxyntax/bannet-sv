@@ -41,17 +41,17 @@ trait TransactionActions {
      */
     protected function set_membership(int $user_id, int $membership_id, bool $return = false, bool $use_avl_balance = false) {
         try {
-            // Get wallet
+            // Get wallet & membership
             $this->wallet = UserWallet::where('user_id', $user_id)->first();
+            $this->membership = CoreMembership::find($membership_id);
 
             // Use available balance if it's needed
             if($use_avl_balance) {
                 // Diff cost from available balance
-                $this->membership = CoreMembership::find($membership_id);
-
                 if($this->wallet->available_balance >= $this->membership->meta['cost']) {
                     $this->wallet->available_balance = $this->wallet->available_balance - $this->membership->meta['cost']; 
                 } else {
+                    // return any way, because your req is failed
                     return response()->json(['status' => false], 400);
                 }
             }
@@ -82,21 +82,48 @@ trait TransactionActions {
      * @param int $amount
      * @return void/boolean
      */
-    protected function charge_pending_balance(int $user_id, int $contract_id, int $amount) {
+    protected function charge_pending_balance(int $user_id, int $contract_id, int $amount, bool $return = false, bool $use_avl_balance = false) {
         try {
+            // Let see status of ad [contract], first
+            $this->contract = UserContract::find($contract_id);
+            if ($this->contract->status !== 0) {
+                // You can't buy this ad
+                return response()->json([
+                    'status' => false,
+                    'desc'  => 'Ad has been already bought'
+                ], 400);
+            }
+
             // Get wallet
             $this->wallet = UserWallet::where('user_id', $user_id)->first();
+
+            // Use available balance if it's needed
+            if($use_avl_balance) {
+                // Diff amount from available balance
+                if($this->wallet->available_balance >= $amount) {
+                    $this->wallet->available_balance = $this->wallet->available_balance - $amount; 
+                } else {
+                    // return any way, because your req is failed
+                    return response()->json([
+                        'status'=> false,
+                        'desc'  => 'You don\'t have enough balance'
+                    ], 400);
+                }
+            }
+
+            // Charge Pending Balance
             $this->wallet->pending_balance = $this->wallet->pending_balance + $amount;
             $this->wallet->save();
 
             // Change status and customer_id in contract
-            $this->contract = UserContract::find($contract_id);
             $this->contract->status = 1;
             $this->contract->meta['customer_id'] = $user_id;
             $this->contract->save();
 
             // Take a notice customer and seller by sending SMS
-            $this->notice_users();
+            // $this->notice_users();
+
+            if($return) { return response()->json(['status' => true], 200); }
             
         } catch (\Throwable $th) {
             return response()->json([
