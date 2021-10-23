@@ -32,7 +32,7 @@ class LoginController extends Controller
      * 
      * @param int or boolean
      */
-    protected $auth;
+    protected $token;
 
     /**
      * name of API token
@@ -69,10 +69,10 @@ class LoginController extends Controller
         try {
 
             $this->authenticate($request);
-            $status = (! $this->auth) ? 401 : 200;
+            $status = (! $this->token) ? 401 : 200;
 
             return response()->json([
-                'auth'  => $this->auth, // you must set it in authorization header
+                'token' => $this->token, // you must set it in Authorization header
                 'name'  => $this->name, // you must set it in cookie
                 'user'  => $this->user
             ], $status);
@@ -162,10 +162,10 @@ class LoginController extends Controller
             $this->name = Hash::make($this->user->tell);
 
             // Renew API token
-            $this->auth = $this->user->createToken($this->name)->plainTextToken;
+            $this->token = $this->user->createToken($this->name)->plainTextToken;
 
             return response()->json([
-                'auth'  => $this->auth, // you must set it in authorization header
+                'token' => $this->token, // you must set it in authorization header
                 'name'  => $this->name, // you must set it in cookie
                 'user'  => $this->user
             ], 200);
@@ -246,12 +246,12 @@ class LoginController extends Controller
                 $this->name = Hash::make($this->user->tell);
 
                 // Create new API token
-                $this->auth = $this->user->createToken($this->name)->plainTextToken;
+                $this->token = $this->user->createToken($this->name)->plainTextToken;
                 return;
             }
             
             // Invalid User
-            $this->auth = false;
+            $this->token = false;
             $this->name = false;
             
         } catch (\Throwable $th) {      

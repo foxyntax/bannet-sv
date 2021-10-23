@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::namespace('User')->prefix('user')->group(function() {
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'idcheck'])->group(function () {
         Route::prefix('contract')->group(function() {
             Route::post('/create', 'Contract@create');
             Route::post('/token/generate', 'Contract@generate_withdrawal_req_token');
@@ -50,7 +50,7 @@ Route::namespace('User')->prefix('user')->group(function() {
     });
 });
 
-Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(function() {
+Route::middleware(['auth:sanctum', 'idcheck'])->namespace('Admin')->prefix('cms')->group(function() {
     Route::prefix('contract')->group(function() {
         Route::prefix('shipment')->group(function () {
             Route::patch('/approve', 'Contract@approve_shipment');
@@ -102,15 +102,21 @@ Route::middleware('auth:sanctum')->namespace('Admin')->prefix('cms')->group(func
 //
 
 // Settings
-Route::namespace('Settings')->prefix('setting')->group(function() {
-    Route::patch('/set', 'Options@set_option');
-    Route::get('/get', 'Options@get_options');
+Route::middleware(['auth:sanctum', 'idcheck'])
+    ->namespace('Settings')
+    ->prefix('setting')
+    ->group(function() {
+        Route::patch('/set', 'Options@set_option');
+        Route::get('/get', 'Options@get_options');
 });
 
 // Transaction
-Route::namespace('Transaction')->prefix('transaction')->group(function() {
-    Route::post('/zarinpal/checkout', 'Transactions@pay_by_zarinpal');
-    Route::post('/verify', 'Transactions@verify_payment');
+Route::middleware(['auth:sanctum', 'idcheck'])
+    ->namespace('Transaction')
+    ->prefix('transaction')
+    ->group(function() {
+        Route::post('/zarinpal/checkout', 'Transactions@pay_by_zarinpal');
+        Route::post('/verify', 'Transactions@verify_payment');
 });
 
 // AUTH
@@ -145,7 +151,7 @@ Route::namespace('Auth')->prefix('auth')->group(function () {
     Route::get('/logout/{user_id}', 'LogoutController@logout')->middleware('auth:sanctum');
     
     // Reset Contract & Security Data
-    Route::middleware('auth:sanctum')->prefix('reset')->group(function () {
+    Route::middleware(['auth:sanctum', 'idcheck'])->prefix('reset')->group(function () {
     
         Route::patch('/password/{with_old}', 'ResetController@update_pass');
         Route::prefix('tell')->group(function () {
