@@ -51,6 +51,8 @@ class User extends Authenticatable
      * @param array
      */
     protected $attributes = [
+        'full_name'     => null,
+        'password'      => null,
         'meta'  => [
             'personal'  => [
                 'avatar'     => null,
