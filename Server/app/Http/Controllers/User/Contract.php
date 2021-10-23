@@ -3,19 +3,20 @@ namespace App\Http\Controllers\User;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\CoreOption;
 use App\Models\UserWallet;
 use App\Models\UserContract;
 use Illuminate\Http\Request;
 use Morilog\Jalali\Jalalian;
+use App\Traits\TransactionActions;
 use App\Http\Controllers\Controller;
 use App\Traits\Contract\ContractNotice;
-use Modules\Settings\Models\CoreOption;
 use App\Http\Controllers\User\Membership;
 use Illuminate\Support\Facades\Validator;
 
 class Contract extends Controller
 {
-    use ContractNotice;
+    use ContractNotice, TransactionActions;
 
     /**
      * @var int $contract
@@ -304,11 +305,12 @@ class Contract extends Controller
         try {
 
             $validator = Validator::make($request->all(), [
-                'user_id'   => 'integer|required|bail',
-                'sender_id' => 'integer|required|bail',
-                'is_seller' => 'integer|required|bail|between:0,1',
-                'rate'      => 'integer|required|bail|between:1,5',
-                'desc'      => 'string|bail',
+                'to'            => 'integer|required|bail',
+                'from'          => 'integer|required|bail',
+                'contract_id'   => 'integer|required|bail',
+                'is_seller'     => 'integer|required|bail|between:0,1',
+                'rate'          => 'integer|required|bail|between:1,5',
+                'desc'          => 'string|bail',
             ]);
     
             if($validator->fails()) {
@@ -317,19 +319,57 @@ class Contract extends Controller
                 ], 500);
             }
 
-            $user = User::where('id', $request->user_id)->select('meta')->first();
-            $user->meta['scores'] = array_push($user->meta['scores'], [
-                'sender_id' => $request->sender_id,
-                'is_seller' => $request->is_seller,
-                'desc'      => $request->has('desc') ? $request->desc : null,
-                'rate'      => $request->rate
+            $sender   = User::where('id', $from)->select('full_name', 'meta')->first();
+            $receiver = User::where('id', $to)->select('full_name', 'meta')->first();
+
+            // Save for sender
+            $sender->meta['scores'] = array_push($user->meta['scores'], [
+                'to'            => $request->to,
+                'from'          => $request->from,
+                'contract_id'   => $request->contract_id,
+                'sender'        => $sender->full_name,
+                'receiver'      => $receiver->full_name,
+                'is_seller'     => $request->is_seller,
+                'desc'          => $request->has('desc') ? $request->desc : null,
+                'rate'          => $request->rate
             ]);
-            $user->save();
+            $sender->save();
+
+            $receiver->meta['scores'] = array_push($user->meta['scores'], [
+                'to'            => $request->to,
+                'from'          => $request->from,
+                'contract_id'   => $request->contract_id,
+                'sender'        => $sender->full_name,
+                'receiver'      => $receiver->full_name,
+                'is_seller'     => $request->is_seller,
+                'desc'          => $request->has('desc') ? $request->desc : null,
+                'rate'          => $request->rate
+            ]);
+            $receiver->save();
 
             return response()->json([
                 'status' => true
             ], 200);
             
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     ** Buy ad by using Wallet
+     * 
+     * @param Illuminate\Http\Request user_id
+     * @param Illuminate\Http\Request contract_id
+     * @param Illuminate\Http\Request amount
+     * @return Illuminate\Http\Response 
+     */
+    public function buy_ad_by_using_wallet (Request $request) : object
+    {
+        try {
+            return $this->charge_pending_balance($request->user_id, $request->contract_id, $request->amount, true, true);
         } catch (\Throwable $th) {
             return response()->json([
                 'error' => $th->getMessage()
