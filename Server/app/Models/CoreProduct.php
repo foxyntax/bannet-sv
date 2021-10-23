@@ -77,4 +77,15 @@ class CoreProduct extends Model
     protected $casts = [
         'features'  => AsArrayObject::class
     ];
+
+    /**
+     * Get the features of the product
+     *
+     * @param  string  $value
+     * @return string
+     */
+    public function getFeaturesAttribute($value)
+    {
+        return json_decode($value);
+    }
 }
