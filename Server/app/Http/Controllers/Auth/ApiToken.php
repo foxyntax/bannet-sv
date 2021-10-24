@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class ApiToken extends Controller
 {
 
 
     /**
-     * Check Token and renew it if is valid
+     ** Check Token and renew it if is valid
      * 
      * @param \Illuminate\Http\Request mode
      * @return \Illuminate\Http\Response api token
@@ -22,7 +22,16 @@ class ApiToken extends Controller
     {
         try {
 
-            $api_token = DB::table('personal_access_tokens')->where($mode, $request->input($mode))->first();
+            switch ($mode) {
+                case 'name':
+                    $api_token = PersonalAccessToken::where($mode, $request->mode)->select('tokenable_id')->first();                   
+                    break;
+                case 'token':
+                    [$id, $token] = explode('|', $request->mode, 2);
+                    $api_token = PersonalAccessToken::where($mode, $token)->select('tokenable_id')->first();
+            }
+
+            // Get user info
             $user = User::where('id', $api_token->tokenable_id)->first();
 
             // Delete Old API tokens
