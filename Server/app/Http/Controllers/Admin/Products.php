@@ -170,18 +170,20 @@ class Products extends Controller
             // Find and update product
             $this->product = CoreProduct::findOrFail($product_id);
 
+            // Get instance of src
+            $src_feature = $this->product['features']->src;
+
 
             // Delete uploaded trash images
             if ($request->has('trash_src')) {
                 // remove deleted files and their address
                 foreach ($request->trash_src as $index) {
-                    unset($this->product['features']->src[$index]);
-                    Storage::delete($this->product['features']->src[$index]);
+                    unset($src_feature[$index]);
+                    Storage::delete($src_feature[$index]);
                 }
             }
 
             // Upload new images - if exist
-            $src_feature = $this->product['features']->src;
             if ($request->has('new_src')) {
                 $a = array_merge($this->product['features']->src, [$request->file('new_src')->store('product/' . $this->product->id)]);
                 if(is_array($request->file('new_src'))) {
