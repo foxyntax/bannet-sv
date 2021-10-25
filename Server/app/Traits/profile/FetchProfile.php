@@ -25,28 +25,26 @@ trait FetchProfile {
      * @return Illuminate\Http\Request scores
      * @return Illuminate\Http\Response
      */
-    public function fetch_user_data(int $user_id = null, Request $request) : object
+    public function fetch_user_data($user_id = null, Request $request) : object
     {
         try {
 
             $this->user = User::find($user_id);
 
             //  Get basic user's data
-            if($request->has('profile')) {
-                $this->response['profile'] = $this->user;
+            if($request->has('basic')) {
+                $this->response['basic'] = $this->user;
 
                 // Remove favorites if you don't want them
-                if (!$request->has('favorites') && $request->has('profile')) {
-                    unset($this->response['profile']['meta']['favorites']);
+                if (!$request->has('favorites') && $request->has('basic')) {
+                    unset($this->response['basic']['meta']['favorites']);
                 }
 
                 // Remove scores if you don't want them
-                if (!$request->has('scores') && $request->has('profile')) {
-                    unset($this->response['profile']['meta']['scores']);
+                if (!$request->has('scores') && $request->has('basic')) {
+                    unset($this->response['basic']['meta']['scores']);
                 }
             }
-
-            // Is Neccesary 
 
             // Get User's wallet
             if($request->has('wallet')) {
