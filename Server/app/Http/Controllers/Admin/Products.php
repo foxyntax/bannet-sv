@@ -157,7 +157,8 @@ class Products extends Controller
                 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
                 'weight'        => 'integer|required|bail',
-                'src'           => 'mimes:jpg,png|bail'
+                'trash_src'     => 'integer|bail',
+                'new_src'       => 'mimes:jpg,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -166,32 +167,33 @@ class Products extends Controller
                 ], 500);
             }
     
-            // Find product
+            // Find and update product
             $this->product = CoreProduct::findOrFail($product_id);
-            $this->fill_product_model($request);
 
 
             // Delete uploaded trash images
             if ($request->has('trash_src')) {
                 // remove deleted files and their address
                 foreach ($request->trash_src as $index) {
-                    unset($this->product->features['src'][$index]);
-                    Storage::delete($this->product->features['src'][$index]);
+                    unset($this->product['features']->src[$index]);
+                    Storage::delete($this->product['features']->src[$index]);
                 }
             }
 
             // Upload new images - if exist
+            $src_feature = $this->product['features']->src;
             if ($request->has('new_src')) {
+                $a = array_merge($this->product['features']->src, [$request->file('new_src')->store('product/' . $this->product->id)]);
                 if(is_array($request->file('new_src'))) {
                     foreach ($request->file('new_src') as $src) {
-                        array_push($this->product->features['src'], $src->store('product/' . $request->name));
+                        $src_feature = array_merge($src_feature, [$src->store('product/' . $this->product->id)]);
                     }
                 } else {
-                    array_push($this->product->features['src'], $request->file('new_src')->store('product/' . $request->name));
+                    $src_feature = array_merge($src_feature, [$request->file('new_src')->store('product/' . $this->product->id)]);
                 }
             }
-
-            $this->product->save();
+            
+            $this->fill_product_model($request, $src_feature);
 
             return response()->json([
                 'product'=> $this->product,
@@ -331,7 +333,7 @@ class Products extends Controller
      * @param collection $request
      * @return void
      */
-    protected function fill_product_model($request)
+    protected function fill_product_model($request, $updated_src)
     {
         $this->product->type        = $request->type;
         $this->product->features    = [
@@ -347,8 +349,10 @@ class Products extends Controller
             'speed'       => $request->speed,
             'tire_height' => $request->tire_height,
             'width'       => $request->width,
-            'weight'      => $request->weight
+            'weight'      => $request->weight,
+            'src'         => $updated_src
         ];
+        $this->product->save();
         
     }
 }
