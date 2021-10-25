@@ -37,18 +37,16 @@ class Options extends Controller
     {
         
         try {
-            switch ($request->option) {
-                case 'CLOSE_DAY':
-                    DB::table('core_options')->updateOrInsert(
-                        ['option'   => 'CLOSE_DAY'],
-                        ['value'    => json_encode($request->value)]
-                    );
-                    break;
-                default:
-                    DB::table('core_options')->updateOrInsert(
-                        ['option'   => $request->option],
-                        ['value'    => $request->value]
-                    );
+            if(is_string($request->value)) {
+                DB::table('core_options')->updateOrInsert(
+                    ['option'   => $request->option],
+                    ['value'    => $request->value]
+                );
+            } else {
+                DB::table('core_options')->updateOrInsert(
+                    ['option'   => 'CLOSE_DAY'],
+                    ['value'    => json_encode($request->value)]
+                );
             }
 
             return response()->json([
@@ -73,9 +71,9 @@ class Options extends Controller
     {
         try {
             $this->option = new CoreOption;
-            return response()->json([
-                'options'   => $this->option->full_options 
-            ], 200);
+            return response()->json(
+                $this->option->full_options 
+            , 200);
             
         } catch (\Throwable $th) {
             
