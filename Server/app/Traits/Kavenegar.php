@@ -30,7 +30,7 @@ trait Kavenegar {
     {
         try{
             $api = new KavenegarApi(env('OTP_API_KEY'));
-            KavenegarApi::VerifyLookup($receptor, $token, '', '', $template, $format);
+            $api->VerifyLookup($receptor, $token, '', '', $template, $format);
         }
         catch(ApiException $e){
             return response()->json($e->errorMessage(), 412);
