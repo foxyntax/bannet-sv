@@ -75,7 +75,7 @@ class Products extends Controller
                 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
                 'weight'        => 'integer|required|bail',
-                'src'           => 'mimes:jpg,png|bail'
+                'src.*'         => 'mimes:jpg,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -157,8 +157,7 @@ class Products extends Controller
                 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
                 'weight'        => 'integer|required|bail',
-                'trash_src'     => 'integer|bail',
-                'new_src'       => 'mimes:jpg,png|bail'
+                'new_src.*'     => 'mimes:jpg,png|bail'
             ]);
     
             if($validator->fails()) {
@@ -185,7 +184,6 @@ class Products extends Controller
 
             // Upload new images - if exist
             if ($request->has('new_src')) {
-                $a = array_merge($this->product['features']->src, [$request->file('new_src')->store('product/' . $this->product->id)]);
                 if(is_array($request->file('new_src'))) {
                     foreach ($request->file('new_src') as $src) {
                         $src_feature = array_merge($src_feature, [$src->store('product/' . $this->product->id)]);
