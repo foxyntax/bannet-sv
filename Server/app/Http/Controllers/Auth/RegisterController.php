@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
 use App\Traits\Kavenegar;
+use App\Models\UserWallet;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
@@ -42,26 +43,41 @@ class RegisterController extends Controller
 
     /**
      ** Register User with Pass
+     // this function is not working well for this app
      * 
-     * @param \Illuminate\Http\Request [optional]
+     * @param \Illuminate\Http\Request otp
+     * @param \Illuminate\Http\Request tell
      * @return \Illuminate\Http\Response 
      */
     public function register_without_pass(Request $request) : object
     {
         try {
-            $this->user = User::create($request->all());
+
+            $this->user = User::where([
+                'tell'  => $request->tell,
+                'otp'   => $request->otp
+            ])->first();
+
+            if(!$this->user) {
+                return response()->json([
+                    'status'=> false,
+                    'error' => 'کاربری با این شماره تلفن یافت نشد'
+                ], 400);
+            }
 
             // now, you can use $user for your new plans [please don't remove this note]
             return $this->register_actions();
+
         } catch (\Throwable $th) {
             return response()->json([
-                'error'     => $th->getMessage()
+                'error' => $th->getMessage()
             ], 500);
         }
     }
 
     /**
      ** Actions which you need them
+     // this function is not working well for this app
      * 
      * @param Illuminate\Http\Request $request
      * @return object
@@ -73,6 +89,10 @@ class RegisterController extends Controller
             /** 
              ** Your Plans ...
             */
+            // Create wallet for new user
+            UserWallet::create([
+                'user_id'   => $this->user->id,
+            ]);
 
             // Generate Name of API token
             $name = Hash::make($this->user->tell);

@@ -114,11 +114,6 @@ class LoginController extends Controller
             $this->user = User::where($request->credentials)->select('id', 'is_disabled')->first();
             $does_exist = (! is_null($this->user));
 
-            // return response()->json([
-            //     'success'   => true,
-            //     'status'    => ($does_exist) ? 'login' : 'register'
-            // ], 200);
-
             // Oh, User has been found but is disabled
             if($does_exist && $this->user->is_disabled === 1) {
                 return response()->json([
