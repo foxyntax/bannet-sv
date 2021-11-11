@@ -46,6 +46,7 @@ class LoginController extends Controller
      */
     public function __construct() {
         $this->otp_token = rand(10000, 99999);
+        // $this->otp_token = '00000';
     }
 
     // =====================
@@ -110,29 +111,27 @@ class LoginController extends Controller
     {
         try {
             // Get User if Exists
-            $this->user = User::where($request->credentials)->first();
+            $this->user = User::where($request->credentials)->select('id', 'is_disabled')->first();
+            $does_exist = (! is_null($this->user));
 
-            // Oh, User has been founded but is disabled
-            if(! is_null($this->user)) {
-                if($this->user->is_disable === 1) {
-                    return response()->json([
-                        'error'  => 'این کاربر بنا به دلایلی، غیرفعال شده است'  
-                    ], 400);
-                }
+            // return response()->json([
+            //     'success'   => true,
+            //     'status'    => ($does_exist) ? 'login' : 'register'
+            // ], 200);
 
-                // User is not disabled, so we need to send token
-                $this->send_otp((int) $request->tell);
-
+            // Oh, User has been found but is disabled
+            if($does_exist && $this->user->is_disabled === 1) {
                 return response()->json([
-                    'success'   => true, // otp has been sent successfuly
-                    'id'        => $this->user->id
-                ], 200);
+                    'error'  => 'این کاربر بنا به دلایلی، غیرفعال شده است'  
+                ], 400);
             }
 
-            // User can not be found
+            // User is not disabled, so we need to send token
+            $this->send_otp((int) $request->tell, $does_exist);
+
             return response()->json([
-                'success'   => true, // otp has been sent successfuly
-                'id'        => 0 // it means to wanna register user
+                'success'   => true,
+                'status'    => ($does_exist) ? 'login' : 'register'
             ], 200);
 
         } catch (\Throwable $th) {
@@ -188,7 +187,7 @@ class LoginController extends Controller
      you can use it whenever you wanna send a token to a tell number seperately
      * 
      * @param \Illuminate\Http\Request tell
-     * @return \Illuminate\Http\Response api token
+     * @return \Illuminate\Http\Response
      */
     public function send_otp_token(Request $request) : object 
     {
@@ -271,9 +270,19 @@ class LoginController extends Controller
      * @param int tell
      * @return void
      */
-    protected function send_otp(int $tell) {
-        $this->send_otp_code($request->tell, $this->otp_token, 'otp');
-        $this->user->otp = $this->otp_token;
-        $this->user->save();
+    protected function send_otp(int $tell , bool $does_exist)
+    {
+        if($does_exist) {
+            $this->user->otp = (string) $this->otp_token;
+            $this->user->save(); return;
+        }
+
+        User::create([
+            'tell'  => '0' . (string) $tell,
+            'meta'  => User::$meta,
+            'otp'   => (string) $this->otp_token
+        ]);
+
+        $this->send_otp_code($tell, $this->otp_token, 'otp');
     }
 }

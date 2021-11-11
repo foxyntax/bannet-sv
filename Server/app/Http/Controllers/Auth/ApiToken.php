@@ -24,11 +24,11 @@ class ApiToken extends Controller
 
             switch ($mode) {
                 case 'name':
-                    $api_token = PersonalAccessToken::where($mode, $request->mode)->select('tokenable_id')->first();                   
+                    $api_token = PersonalAccessToken::where($mode, $request->mode)->select('tokenable_id')->firstOrFail();                   
                     break;
                 case 'token':
                     [$id, $token] = explode('|', $request->mode, 2);
-                    $api_token = PersonalAccessToken::where($mode, $token)->select('tokenable_id')->first();
+                    $api_token = PersonalAccessToken::where($mode, $token)->select('tokenable_id')->firstOrFail();
             }
 
             // Get user info
