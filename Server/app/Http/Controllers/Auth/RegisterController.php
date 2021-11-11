@@ -45,7 +45,7 @@ class RegisterController extends Controller
      ** Register User with Pass
      // this function is not working well for this app
      * 
-     * @param \Illuminate\Http\Request otp
+     * @param \Illuminate\Http\Request token
      * @param \Illuminate\Http\Request tell
      * @return \Illuminate\Http\Response 
      */
@@ -55,7 +55,7 @@ class RegisterController extends Controller
 
             $this->user = User::where([
                 'tell'  => $request->tell,
-                'otp'   => $request->otp
+                'token' => $request->otp
             ])->first();
 
             if(!$this->user) {
