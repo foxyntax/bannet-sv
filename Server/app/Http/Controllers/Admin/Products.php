@@ -86,8 +86,7 @@ class Products extends Controller
 
             // new product
             $this->product = new CoreProduct;
-            $this->fill_product_model($request);
-            $this->product->features['src'] = [];
+            $this->fill_product_model($request, []);
             
             // Upload src of pictures
             if(is_array($request->file('src'))) {
