@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
+use App\Models\User;
 use App\Traits\Kavenegar;
 use Illuminate\Http\Request;
 use App\Mail\PasswordResetToken;
@@ -31,7 +31,7 @@ class ResetController extends Controller
 
 
     public function __construct() {
-        $this->token = rand(100000, 999999);
+        $this->token = rand(10000, 99999);
     }
 
     /**
@@ -83,7 +83,7 @@ class ResetController extends Controller
      * Send SMS incouded by Token to client 
      * and save it in client-side [application]
      * 
-     * @param   string $by : username || tell || email
+     * @param   string $by : username || tell || email || id
      * @param   string $info
      * @return  \Illuminate\Http\Response
     */
@@ -154,17 +154,26 @@ class ResetController extends Controller
      */
     public function update_tell(Request $request) : object {
         try {
+            if (User::where('tell', $request->tell)->count() === 0) {
+                $user = User::findOrFail($request->id);
+                if ($user->otp == $request->token) {
+                    $user->fill([
+                        'tell'  => $request->tell
+                    ])->save();
+                } else {
+                    return response()->json([
+                        'success'   => false
+                    ], 401);
+                }
 
-            $user = User::findOrFail($request->id);
-            if ($user->otp === $request->token) {
-                $user->fill([
-                    'tell'  => $request->tell
-                ])->save();
+                return response()->json([
+                    'success'   => true
+                ], 200);
             }
 
             return response()->json([
-                'success'   => true
-            ], 200);
+                'success'   => false
+            ], 400);
 
         } catch (\Throwable $th) {
             return response()->json([
