@@ -84,7 +84,7 @@ class UserContract extends Model
     }
 
     /**
-     * Convert Expired_at To Jalali Date
+     * Convert Created_at To Jalali Date
      * 
      * @param string value
      * @return string
