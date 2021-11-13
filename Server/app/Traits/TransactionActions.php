@@ -66,7 +66,7 @@ trait TransactionActions {
             
             $this->wallet->save();
 
-            if($return) { return response()->json(['status' => true], 200); }
+            if($return) { return response()->json(['status' => true, 'exp' => $this->wallet->expired_at], 200); }
             
         } catch (\Throwable $th) {
             return response()->json([
@@ -86,7 +86,7 @@ trait TransactionActions {
         try {
             // Let see status of ad [contract], first
             $this->contract = UserContract::find($contract_id);
-            if ($this->contract->status !== 0) {
+            if ($this->contract->status !== 0 && isset($this->contract->meta['customer_id'])) {
                 // You can't buy this ad
                 return response()->json([
                     'status' => false,
