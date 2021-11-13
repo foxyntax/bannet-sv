@@ -2,6 +2,7 @@
 
 namespace App\Traits\Contract;
 
+use App\Models\CoreProduct;
 use Kavenegar\KavenegarApi;
 use Kavenegar\Exceptions\ApiException;
 use Kavenegar\Exceptions\HttpException;
@@ -60,7 +61,9 @@ trait ContractNotice {
         try {
             // Send SMS to seller
             $seller = User::select('tell')->where('id', $this->contract->user_id)->first();
-            KavenegarApi::VerifyLookup($seller->tell, $this->contract->meta['token'], '', '', 'GetWithdrawalTokenForSeller', 'sms');
+            $customer = User::select('full_name')->where('id', $this->contract->meta['customer_id'])->first();
+            $product = CoreProduct::select('design_name')->where('id', $this->contract->meta['product_id'])->first();
+            KavenegarApi::VerifyLookup($seller->tell, $this->contract->meta['token'], $customer->full_name, $product->design_name, 'GetWithdrawalTokenForSeller', 'sms');
             
         } catch(ApiException $e){
             return response()->json($e->errorMessage(), 412);
