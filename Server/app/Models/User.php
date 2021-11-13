@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Morilog\Jalali\Jalalian;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -41,7 +42,6 @@ class User extends Authenticatable
         'is_admin',
         'password',
         'otp',
-        'created_at',
         'updated_at'
     ];
 
@@ -53,33 +53,39 @@ class User extends Authenticatable
     protected $attributes = [
         'full_name'     => null,
         'password'      => null,
-        'meta'  => [
-            'personal'  => [
-                'avatar'     => null,
-                'province'   => null,
-                'city'       => null,
-                'address'    => null,
-                'postal_code'=> null,
-                'phone'      => null
-            ],
-            'financial' => [
-                'shabaa'        => null,
-                'debit_card'    => ['img'   => null, 'value'    => null, 'validated'    => 0],
-                'national_id'   => ['img'   => null, 'value'    => null, 'validated'    => 0],
-                'license_card'  => ['img'   => null, 'value'    => null, 'validated'    => 0],
-            ],
-            'scores'    => [
-                //* Scores example when it has been filled *//
-                // ['to' => 2, 'from' => 1, 'sender' => 'میلاد محمدی', 'receiver' => 'محمد محمدی', 'contract_id' => 5, 'rate' => 1, 'desc' => '', 'is_seller' => 0, 'created_at => '']
-            ],
-            'favorites' => [
-                //* Store Product ID
-                // [5,95,64]
-            ]
+        'otp'           => null,
+        'is_admin'      => 0,
+        'is_disabled'   => 0
+    ];
+
+    /**
+     * The model's default meta of user
+     *
+     * @param array
+     */
+    public static $meta = [
+        'personal'  => [
+            'avatar'     => null,
+            'province'   => null,
+            'city'       => null,
+            'address'    => null,
+            'postal_code'=> null,
+            'phone'      => null
         ],
-        'otp'        => null,
-        'is_admin'   => 0,
-        'is_disabled'=> 0
+        'financial' => [
+            'shabaa'        => null,
+            'debit_card'    => ['img'   => null, 'value'    => null, 'validated'    => 0],
+            'national_id'   => ['img'   => null, 'value'    => null, 'validated'    => 0],
+            'license_card'  => ['img'   => null, 'value'    => null, 'validated'    => 0],
+        ],
+        'scores'    => [
+            //* Scores example when it has been filled *//
+            // ['to' => 2, 'from' => 1, 'sender' => 'میلاد محمدی', 'receiver' => 'محمد محمدی', 'contract_id' => 5, 'rate' => 1, 'desc' => '', 'is_seller' => 0, 'created_at => '']
+        ],
+        'favorites' => [
+            //* Store Product ID
+            // [5,95,64]
+        ]
     ];
 
     /**
@@ -90,6 +96,18 @@ class User extends Authenticatable
     protected $casts = [
         'meta'  => AsArrayObject::class
     ];
+
+    /**
+     * Convert Created_at To Jalali Date
+     * 
+     * @param string value
+     * @return string
+     */
+    public function getCreatedAtAttribute($value) {
+        if(! is_null($value)) {
+            return Jalalian::forge($value)->format('%d %B ماه %Y');
+        }
+    }
 
     /**
      * Get the wallet records associated with the user.
