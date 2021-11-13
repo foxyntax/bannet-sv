@@ -181,6 +181,6 @@ class ProductDetail extends Controller
     protected function is_favorite(int $product_id, int $user_id)
     {
         $meta_col = User::where('id', $user_id)->select('meta')->first();
-        $this->response['is_saved'] = (in_array($product_id, $meta_col->meta['favorites']));
+        $this->response['is_saved'] = in_array($product_id, $meta_col->meta['favorites']);
     }
 }
