@@ -27,15 +27,17 @@ Route::namespace('User')->prefix('user')->group(function() {
             Route::post('/cancel', 'Contract@cancel');
             Route::post('/review', 'Contract@review_user');
             Route::patch('/buy', 'Contract@buy_ad_by_using_wallet');
+            Route::patch('/update/{contract_id}', 'Contract@update');
         });
     
         Route::prefix('membership')->group(function() {
             Route::get('/fetch', 'Membership@fetch_available_memberships');
-            Route::get('/check/{user_id}', 'Membership@is_memebrship_expired');
-            Route::patch('/buy', 'Membership@buy_membership_from_wallet');
+            Route::get('/check/{user_id}', 'Membership@is_membership_expired');
+            Route::patch('/buy', 'Membership@buy_membership_by_using_wallet');
         });
     
         Route::prefix('profile')->group(function() {
+            Route::get('/public-fetch/{id}', 'Profile@fetch_profile_as_guest');
             Route::get('/fetch/{user_id}', 'Profile@fetch_user_data');
             Route::post('/update/{user_id}/{mode}', 'Profile@update_user_data');
             Route::patch('/withdrawal/{user_id}', 'Profile@withdrawal_request');
@@ -132,7 +134,7 @@ Route::namespace('Auth')->prefix('auth')->group(function () {
 
     // OTP Actions
     Route::prefix('otp')->group(function () {
-        Route::post('/check', 'LoginController@check_user'); // [if you wana check user existance before login/register and send a token]
+        Route::post('/check', 'LoginController@check_user'); // [if you wanna check user existance before login/register and send a token]
         Route::post('/send', 'LoginController@send_otp_token'); // [if you just wanna send sms to user]
     });
     
