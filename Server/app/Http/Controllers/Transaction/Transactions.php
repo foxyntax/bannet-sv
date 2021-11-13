@@ -30,6 +30,17 @@ class Transactions extends Controller
     public function pay_by_zarinpal(Request $request) {
         try {
 
+            //** Your Extra Actions ... Reserve contract[ad] for user if we need to buy a contract[ad] [start]
+            if($request->has('contract_id')) {
+                $contract = UserContract::find($contract_id);
+                if($this->contract->status !== 0 && isset($this->contract->meta['customer_id'])) {
+                    return response()->json(['status' => false], 400);
+                }
+                $contract->meta['customer_id'] = 0;
+                $contract->save();
+            }
+            //** Your Extra Actions ... [end]
+
             $inv = new Invoice;
             $inv->amount((int)$request->amount);
             $inv->detail([
@@ -54,7 +65,7 @@ class Transactions extends Controller
             ))->pay()->toJson();
 
         } catch (PurchaseFailedException $exception) {
-            return response()->json(['success' => false, 'catch' => $exception->getMessage()]);
+            return response()->json(['status' => false, 'catch' => $exception->getMessage()]);
         }
     }
 
@@ -86,14 +97,27 @@ class Transactions extends Controller
             
                 // You can show payment referenceId to the user.
                 return response()->json([
-                    'success'   => true,
+                    'status'   => true,
                     'refs'      => $receipt->getReferenceId(),
                     'cost'      => $transaction->amount,
                 ]);
             } else {
-                CoreTransaction::where('authority', '=', $request->Authority)->delete();
+                $transaction = CoreTransaction::where('authority', '=', $request->Authority);
+
+                //** Your Extra Actions [start]
+                // Remove customer, if it's reserved on a contract[ad]
+                $transaction_fetched = $transaction->first();
+                if(isset($transaction_fetched->meta['contract_id'])) {
+                    $contract = $contract = UserContract::find($transaction_fetched->meta['contract_id']);
+                    unset($contract->meta['customer_id']);
+                    $contract->save();
+                }
+                //** Your Extra Actions [end]
+
+                // Remove failed transaction record
+                $transaction->delete();
                 return response()->json([
-                    'success'   => false,
+                    'status'   => false,
                     'catch'     => 'تراکنش ناموفق بوده است؛ چنانچه مبلغی از حساب شما کسر شده است، طی 48 ساعت به حساب شما باز خواهد گشت.', 
                 ], 500);
             }
@@ -104,7 +128,7 @@ class Transactions extends Controller
                 We can catch the exception to handle invalid payments.
                 getMessage method, returns a suitable message that can be used in user interface.
             **/
-            return response()->json(['success' => false, 'catch' => $exception->getMessage()], 500);
+            return response()->json(['status' => false, 'catch' => $exception->getMessage()], 500);
         }
     }
 }
