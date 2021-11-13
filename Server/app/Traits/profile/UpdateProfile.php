@@ -61,6 +61,7 @@ trait UpdateProfile {
 
             if ($mode !== 'switcher' && $mode !== 'basic') {
                 return response()->json($this->user->meta[$mode], 200);
+                // return response()->json($request->has('assd'), 200);
             } else if ($mode === 'basic') {
                 return response()->json([
                     'full_name' => $this->user->full_name
@@ -123,9 +124,8 @@ trait UpdateProfile {
                 'avatar'        => 'mimes:jpg,hevc,heif,png|bail',
                 'province'      => 'string|bail',
                 'city'          => 'string|bail',
-                'address'       => 'string|bail',
-                'phone'         => 'string|bail',
-                'postal_code'   => 'string|size:10|bail',
+                'phone'         => 'string|size:11|bail',
+                'postal_code'   => 'string|size:10|bail'
             ]);
     
             if($validator->fails()) {
@@ -142,10 +142,11 @@ trait UpdateProfile {
             }
 
             // Save user's personal information
-            $this->save_updated_value($request->province, $request->has('province'), 'personal', 'province');
-            $this->save_updated_value($request->city, $request->has('city'), 'personal', 'city');
-            $this->save_updated_value($request->address, $request->has('address'), 'personal', 'address');
-            $this->save_updated_value($request->postal_code, $request->has('postal_code'), 'personal', 'postal_code');
+            $this->user->meta['personal']['province']    = $request->province ?? $this->user->meta['personal']['province'];
+            $this->user->meta['personal']['city']        = $request->city ?? $this->user->meta['personal']['city'];
+            $this->user->meta['personal']['address']     = $request->address ?? $this->user->meta['personal']['address'];
+            $this->user->meta['personal']['postal_code'] = $request->postal_code ?? $this->user->meta['personal']['postal_code'];
+            $this->user->meta['personal']['phone']       = $request->phone ?? $this->user->meta['personal']['phone'];
 
             $this->user->save();
         } catch (\Throwable $th) {
@@ -172,10 +173,10 @@ trait UpdateProfile {
 
         try {
             $this->validator = Validator::make($request->all(), [
-                'debit_card'        => 'mimes:jpg,hevc,heif,image/png|bail',
-                'national_id'       => 'mimes:jpg,hevc,heif,png|bail',
-                'license_card'      => 'mimes:jpg,hevc,heif,png|bail',
-                'debit_card_value'  => 'string|size:12|bail',
+                'debit_card.*'      => 'mimes:jpg,hevc,heif,png|bail',
+                'national_id.*'     => 'mimes:jpg,hevc,heif,png|bail',
+                'license_card.*'    => 'mimes:jpg,hevc,heif,png|bail',
+                'debit_card_value'  => 'string|size:16|bail',
                 'national_id_value' => 'string|size:10|bail',
                 'license_card_value'=> 'string|bail',
                 'shabaa'            => 'string|bail'
