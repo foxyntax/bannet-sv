@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Models\UserWallet;
 use Illuminate\Http\Request;
 use Morilog\Jalali\Jalalian;
+use App\Models\CoreMembership;
 use App\Traits\TransactionActions;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
@@ -50,13 +51,15 @@ class Membership extends Controller
 
     /**
      ** Check user's membership that is it expired or not? 
+     // it's a helper method, so you can fetch user wallet with membership
      * 
      * @param int $user_id
+     * @return object
      */
-    public static function is_memebrship_expired(int $user_id, int $return = 0) : object
+    public function is_membership_expired(int $user_id, int $return = 0)
     {
         try {
-            $this->wallet = UserWallet::where('user_id', $user_id)->select('expired_at', 'membership_id')->first();
+            $this->wallet = UserWallet::where('user_id', $user_id)->first();
             
             // if function is the helper method.
             $is_helper = ($return == 1);
@@ -65,14 +68,20 @@ class Membership extends Controller
                 if(Jalalian::forge($this->wallet->getRawOriginal('expired_at'))->getTimestamp() >= Jalalian::now()->getTimestamp()) {
                     return (! $is_helper)
                         ? response()->json(['status' => true], 200)
-                        : true;
+                        : [
+                            'status' => true,
+                            'wallet' => $this->wallet
+                        ];
                 } else {
                     $this->wallet->membership_id = null;
                     $this->wallet->expired_at = null;
                     $this->wallet->save();
                     return (! $is_helper)
                         ? response()->json(['status' => false], 200)
-                        : false;
+                        : [
+                            'status' => true,
+                            'wallet' => $this->wallet
+                        ];
 
                     // Then you must delete all fetched data about old membership in client,
                     // however I'll do it in fetch_user_data if you use it
@@ -80,7 +89,10 @@ class Membership extends Controller
             }
             
             if($is_helper) {
-                return true;
+                return [
+                    'status' => true,
+                    'wallet' => $this->wallet
+                ];
             }
             
         } catch (\Throwable $th) {
@@ -97,7 +109,7 @@ class Membership extends Controller
      * @param Illuminate\Http\Request user_id
      * @param Illuminate\Http\Request contract_id
      */
-    public function buy_membership_from_wallet(Request $request) : object
+    public function buy_membership_by_using_wallet(Request $request) : object
     {
         try {
             return $this->set_membership($request->user_id, $request->membership_id, true, true);
