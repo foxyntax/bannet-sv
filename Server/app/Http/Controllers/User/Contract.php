@@ -29,8 +29,6 @@ class Contract extends Controller
      * 
      * @param Illuminate\Http\Request user_id
      * @param Illuminate\Http\Request product_id
-     * @param Illuminate\Http\Request province
-     * @param Illuminate\Http\Request city
      * @param Illuminate\Http\Request desc
      * @param Illuminate\Http\Request tyre_year
      * @param Illuminate\Http\Request count
@@ -43,11 +41,10 @@ class Contract extends Controller
             $validator = Validator::make($request->all(), [
                 'user_id'       => 'bail|integer|required',
                 'product_id'    => 'bail|integer|required',
-                'province'      => 'bail|string|required',
-                'city'          => 'bail|string|required',
                 'desc'          => 'bail|string|required',
                 'tyre_year'     => 'bail|integer|required',
                 'count'         => 'bail|integer|required',
+                'cost'          => 'bail|integer|required',
                 'shipment_day'  => 'bail|integer|required',
             ]);
     
@@ -57,7 +54,7 @@ class Contract extends Controller
                 ], 500);
             }
 
-            $has_membership = Membership::is_memebrship_expired($request->user_id, 1);
+            $has_membership = (new Membership)->is_membership_expired($request->user_id, 1);
 
             if($has_membership) {
                 $exp_days = $this->get_contract_expiration();
@@ -65,13 +62,71 @@ class Contract extends Controller
 
                 return response()->json([
                     'status'    => true,
-                    'contract'  => $new
+                    // 'contract'  => $new
                 ], 200);
             }
 
             return response()->json([
                 'status'=> false,
                 'desc'  => 'you haven\'t got any actived membership'
+            ], 400);
+            
+        } catch (\Throwable $th) {
+            return response()->json([
+                'error' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     ** Update a new contract
+     // The request will be fired from a seller
+     * 
+     * @param Illuminate\Http\Request desc
+     * @param Illuminate\Http\Request tyre_year
+     * @param Illuminate\Http\Request count
+     * @param Illuminate\Http\Request shipment_day
+     * @param Illuminate\Http\Request cost
+     * @return Illuminate\Http\Response
+     */
+    public function update(int $contract_id, Request $request) : object
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'desc'          => 'bail|string|required',
+                'tyre_year'     => 'bail|string|required',
+                'count'         => 'bail|string|required',
+                'shipment_day'  => 'bail|string|required',
+                'cost'          => 'bail|string|required',
+            ]);
+    
+            if($validator->fails()) {
+                return response()->json([
+                    'error' => $validator->errors()
+                ], 500);
+            }
+
+            $instance = UserContract::where([
+                'id'        => $contract_id,
+                'status'    => 0 
+            ]);
+
+            if($instance->count() > 0) {
+                $contract = $instance->first();
+                $contract->meta['desc']         = $request->desc;
+                $contract->meta['tyre_year']    = $request->tyre_year;
+                $contract->meta['count']        = $request->count;
+                $contract->meta['cost']         = $request->cost;
+                $contract->meta['shipment_day'] = $request->shipment_day;
+                $contract->save();
+
+                return response()->json([
+                    'status'    => true
+                ], 200);
+            }
+
+            return response()->json([
+                'status'=> false
             ], 400);
             
         } catch (\Throwable $th) {
@@ -105,11 +160,12 @@ class Contract extends Controller
             if ($this->contract->status == 1) {
                 // Generate token and change status for withdrawal
                 $this->contract->status = 2;
-                $this->contract->meta['token'] = rand(100000000, 999999999);
+                $this->contract->meta['token'] = rand(10000, 99999);
+                $this->contract->meta['is_sent_token'] = 1;
                 $this->contract->save();
 
                 // Take a notice customer and seller by sending SMS
-                // $this->notice_generate_token();
+                $this->notice_generate_token();
 
                 return response()->json([
                     'status' => true
@@ -118,7 +174,7 @@ class Contract extends Controller
 
             return response()->json([
                 'status' => false
-            ], 500);
+            ], 400);
             
         } catch (\Throwable $th) {
             return response()->json([
@@ -240,7 +296,7 @@ class Contract extends Controller
             $validator = Validator::make($request->all(), [
                 'user_id'    => 'integer|required|bail',
                 'contract_id'=> 'integer|required|bail',
-                'token'      => 'integer|required|bail'
+                'token'      => 'string|required|bail'
             ]);
     
             if($validator->fails()) {
@@ -408,11 +464,10 @@ class Contract extends Controller
             $new->product_id    = $request->product_id;
             $new->status        = 0;
             $new->meta = [
-                'province'      => $request->province,
-                'city'          => $request->city,
                 'desc'          => $request->desc,
                 'tyre_year'     => $request->tyre_year,
                 'count'         => $request->count,
+                'cost'          => $request->cost,
                 'shipment_day'  => $request->shipment_day
             ];
             $new->expired_at    = Carbon::parse(Carbon::now()->timestamp + ($exp_days * 24 * 3600))->toDateTimeString();
