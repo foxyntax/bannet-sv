@@ -54,7 +54,7 @@ class UserWallet extends Model
         'pending_balance'   => 0,
         'available_balance' => 0,
         'withdraw_balance'  => 0,
-        'transactions'      => [],
+        'transactions'      => "[]",
         'expired_at'        => null
 
         //* Transaction example when it has been filled *//
