@@ -28,7 +28,7 @@ class ApiToken extends Controller
                     break;
                 case 'token':
                     [$id, $token] = explode('|', $request->mode, 2);
-                    $api_token = PersonalAccessToken::where($mode, $token)->select('tokenable_id')->firstOrFail();
+                    $api_token = PersonalAccessToken::where('id', $id)->select('tokenable_id')->firstOrFail();
             }
 
             // Get user info
