@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Models\User;
 use App\Traits\Kavenegar;
+use App\Models\UserWallet;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -46,7 +47,6 @@ class LoginController extends Controller
      */
     public function __construct() {
         $this->otp_token = rand(10000, 99999);
-        // $this->otp_token = '00000';
     }
 
     // =====================
@@ -110,10 +110,16 @@ class LoginController extends Controller
     public function check_user(Request $request) : object
     {
         try {
-            // Get User if Exists
+            // Get User and his/het wallet if Exists
             $this->user = User::where($request->credentials)->select('id', 'is_disabled')->first();
-            $does_exist = (! is_null($this->user));
 
+            $does_exist = (! is_null($this->user));
+            if ($does_exist) {
+                $is_wallet_registered = (UserWallet::where('user_id', $this->user->id)->count() !== 0);
+            } else {
+                $is_wallet_registered = false;
+            }
+            
             // Oh, User has been found but is disabled
             if($does_exist && $this->user->is_disabled === 1) {
                 return response()->json([
@@ -122,11 +128,11 @@ class LoginController extends Controller
             }
 
             // User is not disabled, so we need to send token
-            $this->send_otp((int) $request->tell, $does_exist);
+            $this->send_otp($request->tell, $does_exist, $is_wallet_registered);
 
             return response()->json([
                 'success'   => true,
-                'status'    => ($does_exist) ? 'login' : 'register'
+                'status'    => ($does_exist && $is_wallet_registered) ? 'login' : 'register'
             ], 200);
 
         } catch (\Throwable $th) {
@@ -189,7 +195,7 @@ class LoginController extends Controller
         try {
 
             $this->user = User::where('tell', $request->tell)->firstOrFail();
-            $this->send_otp((int) $request->tell);
+            $this->send_otp($request->tell);
             
             return response()->json([
                 'success' => true
@@ -265,19 +271,21 @@ class LoginController extends Controller
      * @param int tell
      * @return void
      */
-    protected function send_otp(int $tell , bool $does_exist)
+    protected function send_otp(string $tell , bool $does_exist, bool $is_wallet_registered)
     {
         if($does_exist) {
             $this->user->otp = (string) $this->otp_token;
-            $this->user->save(); return;
+            $this->user->save();
         }
 
-        User::create([
-            'tell'  => '0' . (string) $tell,
-            'meta'  => User::$meta,
-            'otp'   => (string) $this->otp_token
-        ]);
+        if (!$does_exist && !$is_wallet_registered) {
+            User::create([
+                'tell'  => $tell,
+                'meta'  => User::$meta,
+                'otp'   => (string) $this->otp_token
+            ]);
+        }
 
-        $this->send_otp_code($tell, $this->otp_token, 'otp');
+        $this->send_otp_code('0' . (string) $tell, $this->otp_token, 'otp');
     }
 }
