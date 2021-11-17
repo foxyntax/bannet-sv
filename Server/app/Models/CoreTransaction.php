@@ -79,6 +79,13 @@ class CoreTransaction extends Model
     }
 
     /**
+     * Get the user that owns the user meta record.
+     */
+    public function user_wallet() {
+        return $this->belongsTo('App\User', 'user_id');
+    }
+
+    /**
      * Create a new factory instance for the model.
      *
      * @return \Illuminate\Database\Eloquent\Factories\Factory
