@@ -133,12 +133,15 @@ trait UpdateProfile {
                 $this->validator = $validator->errors(); return;
             }
     
-            // Delete avaialbe avatar first, if $request has new avatar
+            // Delete avaialbe avatar first, if $request has new avatar or even just delete avatar
             if($request->has('avatar') && ! is_null($this->user->meta['personal']['avatar'])) {
                 Storage::delete($this->user->meta['personal']['avatar']);
                 $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/".$this->user->id);
             } else if ($request->has('avatar')) {
                 $this->user->meta['personal']['avatar']   = $request->file('avatar')->store("users/".$this->user->id);
+            } else if ($request->has('deleted_avatar')) {
+                Storage::delete($this->user->meta['personal']['avatar']);
+                $this->user->meta['personal']['avatar']   = '';
             }
 
             // Save user's personal information
