@@ -55,7 +55,7 @@ class RegisterController extends Controller
 
             $this->user = User::where([
                 'tell'  => $request->tell,
-                'token' => $request->otp
+                'otp'   => $request->token
             ])->first();
 
             if(!$this->user) {
@@ -93,6 +93,10 @@ class RegisterController extends Controller
             UserWallet::create([
                 'user_id'   => $this->user->id,
             ]);
+
+            /**
+             ** General Actions [please don't remove these codes] 
+             */
 
             // Generate Name of API token
             $name = Hash::make($this->user->tell);
