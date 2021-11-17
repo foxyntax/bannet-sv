@@ -46,7 +46,7 @@ Route::namespace('User')->prefix('user')->group(function() {
     
     Route::prefix('store')->group(function() {
         Route::prefix('fetch')->group(function () {
-            Route::get('/product/{offset}/{limit}/{city}/{get_filters?}', 'Products@render_product_page');
+            Route::get('/product/{offset}/{limit}/{get_filters}/{city}', 'Products@render_product_page');
             Route::get('/detail/{product_id}/{user_id}', 'ProductDetail@render_product_detail');
         });
     });
