@@ -32,16 +32,18 @@ trait Wallet {
             }
 
             // Fetch User's wallet data 
-            $wallet = UserWallet::where('user_id', $user_id)->select('withdraw_balance', 'available_balance')->firstOrFail();
+            $wallet = UserWallet::where('user_id', $user_id)->firstOrFail();
 
             // Check if the cost is less than available balance
             if($wallet->available_balance >= $request->cost) {
 
                 $wallet->withdraw_balance = $wallet->withdraw_balance + $request->cost;
+                $wallet->available_balance = $wallet->available_balance - $request->cost;
                 $wallet->save();
 
                 return response()->json([
-                    'status' => true
+                    'status' => true,
+                    'wallet'    => $wallet
                 ], 200);
             }
 
