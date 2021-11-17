@@ -470,7 +470,7 @@ class Contract extends Controller
                 'cost'          => $request->cost,
                 'shipment_day'  => $request->shipment_day
             ];
-            $new->expired_at    = Carbon::parse(Carbon::now()->timestamp + ($exp_days * 24 * 3600))->toDateTimeString();
+            $new->expired_at    = Carbon::now()->addDays($exp_days);
             $new->save();
 
             return $new;

@@ -61,7 +61,7 @@ trait TransactionActions {
 
             // Update expiration for wallet
             $this->wallet->expired_at = (!is_null($this->membership->days))
-                ? Carbon::parse(Carbon::now()->timestamp + ($this->membership->days * 3600))->toDateTimeString()
+                ? Carbon::now()->addDays($this->membership->days)
                 : null;
             
             $this->wallet->save();
@@ -86,7 +86,7 @@ trait TransactionActions {
         try {
             // Let see status of ad [contract], first
             $this->contract = UserContract::find($contract_id);
-            if ($this->contract->status !== 0 && isset($this->contract->meta['customer_id'])) {
+            if ($this->contract->status !== 0 && (isset($this->contract->meta['customer_id']) && $this->contract->meta['customer_id'] !== 0)) {
                 // You can't buy this ad
                 return response()->json([
                     'status' => false,
