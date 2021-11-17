@@ -61,7 +61,7 @@ class Products extends Controller
      * @param Illuminate\Http\Request $tire_height
      * @return Illuminate\Http\Response
      */
-    public function render_product_page(int $offset, int $limit, string $city, int $get_filters = 0, Request $request) : object
+    public function render_product_page(int $offset, int $limit, int $get_filters = 0, string $city, Request $request) : object
     {
         try {
 
