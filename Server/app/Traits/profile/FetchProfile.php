@@ -54,7 +54,6 @@ trait FetchProfile {
 
             // Get user's receipt
             if($request->has('receipt')) {
-                // $this->response['receipt'] = CoreIncoming::where('user_id', $user_id)->get();
                 $this->response['receipt'] = $this->user->core_transaction;
             }
 
