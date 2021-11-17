@@ -286,6 +286,6 @@ class LoginController extends Controller
             ]);
         }
 
-        $this->send_otp_code('0' . (string) $tell, $this->otp_token, 'otp');
+        $this->send_otp_code($tell, $this->otp_token, 'otp');
     }
 }
