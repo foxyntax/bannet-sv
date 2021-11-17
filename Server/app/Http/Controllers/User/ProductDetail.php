@@ -44,7 +44,7 @@ class ProductDetail extends Controller
             $this->fetch_product_information($product_id);
 
             // Fetch Advertisments of product
-            $this->fetch_ads($product_id);
+            $this->fetch_ads($product_id, $user_id);
 
             // Fetch ads of user and if it's a favorite product, also if user exists
             if($user_id != 0) {
@@ -85,7 +85,7 @@ class ProductDetail extends Controller
      * @param int $product_id
      * @return void
      */
-    protected function fetch_ads(int $product_id)
+    protected function fetch_ads(int $product_id, int $user_id = 0)
     {
         // Fetch all ads 
         /**
@@ -95,9 +95,14 @@ class ProductDetail extends Controller
                                                 ->where([
                                                     'product_id' => $product_id,
                                                     'status'     => 0
-                                                ])
-                                                // ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
-                                                ->get();
+                                                ]);
+                                                // ->whereDate('expired_at', '>=',  Carbon::now()->toDateString());
+        if ($user_id !== 0) {
+            $this->response['ads'] = $this->response['ads']->where('user_id', '!=', $user_id)->get();
+        } else {
+            $this->response['ads'] = $this->response['ads']->get();
+        }
+        
         $this->get_avg_cost();
     }
 
