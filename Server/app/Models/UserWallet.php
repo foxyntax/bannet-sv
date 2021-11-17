@@ -29,7 +29,6 @@ class UserWallet extends Model
         'pending_balance',
         'available_balance',
         'withdraw_balance',
-        'transactions',
         'expired_at', // memebership's expiration
     ];
 
@@ -54,7 +53,6 @@ class UserWallet extends Model
         'pending_balance'   => 0,
         'available_balance' => 0,
         'withdraw_balance'  => 0,
-        'transactions'      => "[]",
         'expired_at'        => null
 
         //* Transaction example when it has been filled *//
@@ -94,5 +92,12 @@ class UserWallet extends Model
      */
     public function core_membership() {
         return $this->belongsTo('App\Models\CoreMembership', 'membership_id');
+    }
+
+    /**
+     * Get the transaction records associated with the user wallet.
+     */
+    public function core_transaction() {
+        return $this->hasMany('App\Models\CoreTransaction', 'user_id');
     }
 }

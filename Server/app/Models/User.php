@@ -134,6 +134,6 @@ class User extends Authenticatable
      * Get the transaction records associated with the user.
      */
     public function core_transaction() {
-        return $this->hasMany('Modules\Transaction\Models\CoreTransaction', 'user_id');
+        return $this->hasMany('App\Models\CoreTransaction', 'user_id');
     }
 }

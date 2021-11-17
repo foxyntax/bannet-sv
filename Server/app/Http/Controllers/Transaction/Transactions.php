@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Transaction;
 
 use Carbon\Carbon;
+use App\Models\UserContract;
 use Illuminate\Http\Request;
 use Shetabit\Multipay\Invoice;
+use App\Models\CoreTransaction;
 use App\Traits\TransactionActions;
 use App\Http\Controllers\Controller;
 use Shetabit\Payment\Facade\Payment;
-use App\Models\CoreTransaction;
 use Shetabit\Multipay\Exceptions\InvalidPaymentException;
 use Shetabit\Multipay\Exceptions\PurchaseFailedException;
 
@@ -32,8 +33,8 @@ class Transactions extends Controller
 
             //** Your Extra Actions ... Reserve contract[ad] for user if we need to buy a contract[ad] [start]
             if($request->has('contract_id')) {
-                $contract = UserContract::find($contract_id);
-                if($this->contract->status !== 0 && isset($this->contract->meta['customer_id'])) {
+                $contract = UserContract::find($request->contract_id);
+                if($contract->status !== 0 && isset($contract->meta['customer_id'])) {
                     return response()->json(['status' => false], 400);
                 }
                 $contract->meta['customer_id'] = 0;
@@ -93,6 +94,7 @@ class Transactions extends Controller
                 } else if ($transaction->description == 'پرداخت مبلغ ضمانت') {
                     $this->charge_pending_balance($transaction->user_id, $transaction->meta['contract_id'], $transaction->amount);
                 }
+                //** Your Extra Actions ... [end]
 
             
                 // You can show payment referenceId to the user.
