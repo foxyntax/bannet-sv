@@ -36,7 +36,6 @@ class Products extends Controller
 
     /**
      ** Create new product
-    //  NOTE: I was not sure, how multiple uploads work on laravel?? please test it
      * 
      * @param Illuminate\Http\Request type
      * @param Illuminate\Http\Request name as feature.name
@@ -86,18 +85,18 @@ class Products extends Controller
 
             // new product
             $this->product = new CoreProduct;
-            $this->fill_product_model($request, []);
             
             // Upload src of pictures
+            $assets = [];
             if(is_array($request->file('src'))) {
                 foreach ($request->file('src') as $src) {
-                    array_push($this->product->features['src'], $src->store('product/' . $request->name));
+                    array_push($assets, $src->store('product/' . $this->product->id));
                 }
             } else {
-                array_push($this->product->features['src'], $request->file('src')->store('product/' . $request->name));
+                $assets = $request->file('src')->store('product/' . $this->product->id);
             }
 
-            $this->product->save();
+            $this->fill_product_model($request, $assets);
 
             return response()->json([
                 'status'    => true
@@ -115,7 +114,6 @@ class Products extends Controller
     
     /**
      ** Update a product
-    //  NOTE: I was not sure, how multiple uploads work on laravel?? please test it
      * 
      * @param int $product_id
      * @param Illuminate\Http\Request type
