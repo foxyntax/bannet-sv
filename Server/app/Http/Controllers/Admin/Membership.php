@@ -73,14 +73,12 @@ class Membership extends Controller
     public function fetch_detail(int $membership_id ) : object
     {
         try {
-
             $this->membership = CoreMembership::where('id', $membership_id)->first();
                     
             return response()->json([
                 'membership'=> $this->membership->get(),
                 'using_rate'=> UserWallet::where('membership_id', $membership_id)->count()
             ], 200);
-            
         } catch (\Throwable $th) {
             return response()->json([
                 'error' => $th->getMessage()
