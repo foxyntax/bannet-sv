@@ -40,6 +40,9 @@ class Contract extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'user_id'       => 'bail|integer|required',
+                'city'          => 'bail|string|required',
+                'province'      => 'bail|string|required',
+                'user_id'       => 'bail|integer|required',
                 'product_id'    => 'bail|integer|required',
                 'desc'          => 'bail|string|required',
                 'tyre_year'     => 'bail|integer|required',
@@ -464,6 +467,8 @@ class Contract extends Controller
             $new->product_id    = $request->product_id;
             $new->status        = 0;
             $new->meta = [
+                'province'      => $request->province,
+                'city'          => $request->city,
                 'desc'          => $request->desc,
                 'tyre_year'     => $request->tyre_year,
                 'count'         => $request->count,
