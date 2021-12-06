@@ -188,7 +188,7 @@ class Products extends Controller
     {
         $fechted = UserContract::where('meta->city', $city)
                                ->where('status', 0)
-                            //    ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                               ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
                                ->where('core_products.type', $request->type)
                                ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
                                ->select('product_id as id', 'features', 'type')
