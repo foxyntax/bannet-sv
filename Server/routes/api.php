@@ -78,7 +78,7 @@ Route::middleware(['auth:sanctum', 'idcheck'])->namespace('Admin')->prefix('cms'
 
     // All tested
     Route::prefix('profile')->group(function() {
-        Route::get('/fetch/{is_admin}/{offset}/{limit}/{searched?}', 'Profile@fetch');
+        Route::get('/fetch/{mode}/{offset}/{limit}/{searched?}', 'Profile@fetch');
         Route::patch('/identity/{user_id}', 'Profile@identify_profile');
         Route::patch('/accept-withdrawal/{user_id}', 'Profile@accept_withdrawal_req');
     });
