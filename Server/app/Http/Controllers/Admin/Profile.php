@@ -14,15 +14,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
-/**
- ** Here I show the methods that I need to develop 
- *
- // 1. fetch_profile = use App\Http\Controllers\Users\Profile
- // 2. fetch
- // 3. identify_profile
- * 
- */
-
 class Profile extends Controller
 {
     use Wallet;
@@ -56,22 +47,61 @@ class Profile extends Controller
      * @param string $searched
      * @return Illuminate\Http\Response
      */
-    public function fetch(int $is_admin, int $offset, int $limit, $searched = null) : object
+    public function fetch(string $mode, int $offset, int $limit, $searched = null) : object
     {
         try {
-            if(is_null($searched) && empty($searched)) {
-                $this->user = User::where('is_admin', $is_admin);
-                // $this->user->user_contracts;
-            } else {
-                $this->user = User::where('users.is_admin', $is_admin)
-                                  ->where(function($query) use ($searched) {
-                                      $query->where('users.full_name', 'like', "%$searched%")
-                                          ->orWhere('users.tell', 'like', "%$searched%");
-                                  });
+
+            switch ($mode) {
+                case 'withdrawal':
+                    $this->user = User::where('users.is_admin', 0)
+                                      ->where('user_wallet.withdraw_balance', '>', 0);
+                break;
+
+                case 'admin':
+                    $this->user = User::where('users.is_admin', 1);
+                break;
+
+                case 'user':
+                    $this->user = User::where('users.is_admin', 0);
+                break;
+
+                case 'verify':
+                    $this->user = User::where('users.is_admin', 0)
+                                      ->where(function($query) {
+                                            $query->where(function($query) {
+                                                $query->where('meta->financial->debit_card->validated', 0)
+                                                      ->where('meta->financial->debit_card->value', null)
+                                                      ->where('meta->financial->debit_card->img', null);
+                                            })
+                                            ->orWhere(function($query) {
+                                                $query->where('meta->financial->national_id->validated', 0)
+                                                      ->where('meta->financial->national_id->value', null)
+                                                      ->where('meta->financial->national_id->img', null);
+                                            })
+                                            ->orWhere(function($query) {
+                                                $query->where('meta->financial->license_card->validated', 0)
+                                                      ->where('meta->financial->license_card->value', null)
+                                                      ->where('meta->financial->license_card->img', null);
+                                            });
+                                      });
+                break;
+                
+                default:
+                    return response()->json([
+                        'error' => 'Invalid Mode',
+                    ], 500);  
+            }
+
+            if(!is_null($searched) && !empty($searched)) {
+                $this->user->where(function($query) use ($searched) {
+                                $query->where('users.full_name', 'like', "%$searched%")
+                                        ->orWhere('users.tell', 'like', "%$searched%");
+                            });
             }
 
             $count = $this->user->count();
-            $this->user = $this->user->offset($offset)
+            $this->user = $this->user->join('user_wallet', 'user_wallet.user_id', '=', 'users.id')
+                                     ->offset($offset)
                                      ->limit($limit)
                                      ->get();
             
