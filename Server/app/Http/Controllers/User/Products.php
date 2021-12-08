@@ -186,13 +186,18 @@ class Products extends Controller
      */
     protected function fetch_lists($offset, $limit, $city, $request)
     {
-        $fechted = UserContract::where('meta->city', $city)
-                               ->where('status', 0)
+        $fechted = UserContract::where('status', 0)
                                ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
-                               ->where('core_products.type', $request->type)
-                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
-                               ->select('product_id as id', 'features', 'type')
-                               ->distinct();
+                               ->where('core_products.type', $request->type);
+            
+        if ($city !== 'تمام شهرها') {
+            $fechted->where('meta->city', $city);
+        }
+
+        $fechted->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                ->select('product_id as id', 'features', 'type')
+                ->distinct();
+        
         $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
         $this->response['count'] = $fechted->count('product_id');
     }
@@ -209,17 +214,21 @@ class Products extends Controller
      */
     protected function fetch_searched_lists($offset, $limit, $city, $request)
     {
-        $fechted = UserContract::where('meta->city', $city)
-                               ->where('status', 0)
-                               ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
-                               ->where('core_products.type', $request->type)
-                               ->where(function($query) use ($request) {
+        $fechted = UserContract::where('status', 0)
+                                ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                                ->where('core_products.type', $request->type)
+                                ->where(function($query) use ($request) {
                                     $query->where('features->name', 'like', "%$request->searched%")
-                                          ->orWhere('features->design_name', 'like', "%$request->searched%");
-                               })
-                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
-                               ->select('product_id as id', 'features', 'type')
-                               ->distinct();
+                                        ->orWhere('features->design_name', 'like', "%$request->searched%");
+                                });
+            
+        if ($city !== 'تمام شهرها') {
+            $fechted->where('meta->city', $city);
+        }
+
+        $fechted->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                ->select('product_id as id', 'features', 'type')
+                ->distinct();
                                
         $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
         $this->response['count'] = $fechted->count('product_id');
@@ -237,11 +246,10 @@ class Products extends Controller
      */
     protected function fetch_filtered_lists($offset, $limit, $city, $request)
     {
-        $fechted = UserContract::where('meta->city', $city)
-                               ->where('status', 0)
-                               ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
-                               ->where('core_products.type', $request->type)
-                               ->where(function($query) use ($request) {
+        $fechted = UserContract::where('status', 0)
+                                ->whereDate('expired_at', '>=',  Carbon::now()->toDateString())
+                                ->where('core_products.type', $request->type)
+                                ->where(function($query) use ($request) {
 
                                     if ($request->has('brand')) {
                                         $query->where('features->brand', $request->brand);
@@ -271,10 +279,16 @@ class Products extends Controller
                                         $query->where('features->for_front', $request->for_front);
                                     }
                                     
-                                })
-                               ->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
-                               ->select('product_id as id', 'features', 'type')
-                               ->distinct();
+                                });
+            
+        if ($city !== 'تمام شهرها') {
+            $fechted->where('meta->city', $city);
+        }
+
+        $fechted->join('core_products', 'user_contracts.product_id', '=', 'core_products.id')
+                ->select('product_id as id', 'features', 'type')
+                ->distinct();
+                               
         $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
         $this->response['count'] = $fechted->count('product_id');
     }
