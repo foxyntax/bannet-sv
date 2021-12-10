@@ -11,17 +11,6 @@ use App\Models\CoreOption;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Database\Eloquent\ModelNotFoundException as ModelNotFound;
 
-/**
- ** Here I show the methods that I need to develop 
- * 
- // 1. create_product
- // 2. update_product
- // 3. delete_product
- // 4. fetch
- // 5. fetch_detail
- * 
- */
-
 class Products extends Controller
 {
     /**
@@ -312,7 +301,7 @@ class Products extends Controller
              */
 
             return response()->json([
-                'product' => CoreProduct::find($product_id)
+                'product' => CoreProduct::find($product_id)->makeVisible('type')
             ], 200);
             
         } catch (\Throwable $th) {
