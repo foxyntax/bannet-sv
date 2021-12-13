@@ -100,7 +100,8 @@ class Profile extends Controller
             }
 
             $count = $this->user->count();
-            $this->user = $this->user->join('user_wallet', 'user_wallet.user_id', '=', 'users.id')
+            $this->user = $this->user->leftJoin('user_wallet', 'user_wallet.user_id', '=', 'users.id')
+                                     ->select('users.*', 'user_wallet.withdraw_balance')
                                      ->offset($offset)
                                      ->limit($limit)
                                      ->get();
