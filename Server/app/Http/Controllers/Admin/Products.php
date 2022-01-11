@@ -50,7 +50,7 @@ class Products extends Controller
 
             $validator = Validator::make($request->all(), [
                 'type'          => 'integer|required|bail',
-                'name'          => 'string|required|bail',
+                // 'name'          => 'string|required|bail',
                 'design_name'   => 'string|required|bail',
                 'diameter'      => 'required|bail',
                 'color'         => 'string|required|bail',
@@ -59,10 +59,10 @@ class Products extends Controller
                 'for_front'     => 'boolean|required|bail',
                 'height'        => 'integer|required|bail',
                 'tubless'       => 'integer|required|bail',
-                'speed'         => 'integer|required|bail',
-                'tire_height'   => 'integer|required|bail',
+                // 'speed'         => 'integer|required|bail',
+                // 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
-                'weight'        => 'integer|required|bail',
+                // 'weight'        => 'integer|required|bail',
                 'src.*'         => 'mimes:jpg,png|bail'
             ]);
     
@@ -130,8 +130,9 @@ class Products extends Controller
 
             $validator = Validator::make($request->all(), [
                 'type'          => 'integer|required|bail',
-                'name'          => 'string|required|bail',
+                // 'name'          => 'string|required|bail',
                 'design_name'   => 'string|required|bail',
+                'brand'         => 'string|required|bail',
                 'diameter'      => 'integer|required|bail',
                 'color'         => 'string|required|bail',
                 'country'       => 'string|required|bail',
@@ -139,10 +140,10 @@ class Products extends Controller
                 'for_front'     => 'boolean|required|bail',
                 'height'        => 'integer|required|bail',
                 'tubless'       => 'integer|required|bail',
-                'speed'         => 'integer|required|bail',
-                'tire_height'   => 'integer|required|bail',
+                // 'speed'         => 'integer|required|bail',
+                // 'tire_height'   => 'integer|required|bail',
                 'width'         => 'integer|required|bail',
-                'weight'        => 'integer|required|bail',
+                // 'weight'        => 'integer|required|bail',
                 'new_src.*'     => 'mimes:jpg,png|bail'
             ]);
     
@@ -323,8 +324,9 @@ class Products extends Controller
     {
         $this->product->type        = $request->type;
         $this->product->features    = [
-            'name'        => $request->name,
+            'name'        => "لاستیک $request->brand سایز $request->width" . "/". "$request->height" . "R" . "$request->diameter طرح گل $request->design_name",
             'design_name' => $request->design_name,
+            'brand'       => $request->brand,
             'diameter'    => $request->diameter,
             'color'       => $request->color,
             'country'     => $request->country,
@@ -332,10 +334,10 @@ class Products extends Controller
             'for_front'   => $request->for_front,
             'height'      => $request->height,
             'tubless'     => $request->tubless,
-            'speed'       => $request->speed,
-            'tire_height' => $request->tire_height,
+            // 'speed'       => $request->speed,
+            // 'tire_height' => $request->tire_height,
             'width'       => $request->width,
-            'weight'      => $request->weight,
+            // 'weight'      => $request->weight,
             'src'         => $updated_src
         ];
         $this->product->save();
