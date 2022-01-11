@@ -56,9 +56,9 @@ class Products extends Controller
      * @param Illuminate\Http\Request $for_back
      * @param Illuminate\Http\Request $brand
      * @param Illuminate\Http\Request $width
-     * @param Illuminate\Http\Request $weight
+    // @param Illuminate\Http\Request $weight
      * @param Illuminate\Http\Request $height
-     * @param Illuminate\Http\Request $tire_height
+    // @param Illuminate\Http\Request $tire_height
      * @return Illuminate\Http\Response
      */
     public function render_product_page(int $offset, int $limit, int $get_filters = 0, string $city, Request $request) : object
@@ -71,9 +71,9 @@ class Products extends Controller
                 'for_back'      => 'int|bail',
                 'brand'         => 'string|bail',
                 'width'         => 'string|bail',
-                'weight'        => 'string|bail',
+                // 'weight'        => 'string|bail',
                 'height'        => 'string|bail',
-                'tire_height'   => 'string|bail'
+                // 'tire_height'   => 'string|bail'
             ]);
     
             if($validator->fails()) {
@@ -170,9 +170,9 @@ class Products extends Controller
         // get brands
         $this->response['filters']['brands'] = CoreOption::where('option', 'SAVED_BRAND')->select('value')->first();
         $this->response['filters']['width'] = CoreOption::where('option', 'SAVED_WIDTH')->select('value')->first();
-        $this->response['filters']['weight'] = CoreOption::where('option', 'SAVED_WEIGHT')->select('value')->first();
+        // $this->response['filters']['weight'] = CoreOption::where('option', 'SAVED_WEIGHT')->select('value')->first();
         $this->response['filters']['height'] = CoreOption::where('option', 'SAVED_HEIGHT')->select('value')->first();
-        $this->response['filters']['tyre_height'] = CoreOption::where('option', 'SAVED_TYRE_HEIGHT')->select('value')->first();
+        // $this->response['filters']['tyre_height'] = CoreOption::where('option', 'SAVED_TYRE_HEIGHT')->select('value')->first();
     }
 
     /**
@@ -259,17 +259,17 @@ class Products extends Controller
                                         $query->where('features->width', $request->width);
                                     }
 
-                                    if ($request->has('weight')) {
-                                        $query->where('features->weight', $request->weight);
-                                    }
+                                    // if ($request->has('weight')) {
+                                    //     $query->where('features->weight', $request->weight);
+                                    // }
                                     
                                     if ($request->has('height')) {
                                         $query->where('features->height', $request->height);
                                     }
 
-                                    if ($request->has('tire_height')) {
-                                        $query->where('features->tire_height', $request->tire_height);
-                                    }
+                                    // if ($request->has('tire_height')) {
+                                    //     $query->where('features->tire_height', $request->tire_height);
+                                    // }
 
                                     if ($request->has('for_back')) {
                                         $query->where('features->for_back', $request->for_back);
