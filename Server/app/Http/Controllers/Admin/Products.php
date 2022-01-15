@@ -324,7 +324,7 @@ class Products extends Controller
     {
         $this->product->type        = $request->type;
         $this->product->features    = [
-            'name'        => "لاستیک $request->brand سایز $request->width" . "/". "$request->height" . "R" . "$request->diameter طرح گل $request->design_name",
+            'name'        => "سایز $request->width" . "/". "$request->height" . "R" . "$request->diameter",
             'design_name' => $request->design_name,
             'brand'       => $request->brand,
             'diameter'    => $request->diameter,
