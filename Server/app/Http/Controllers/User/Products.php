@@ -305,7 +305,7 @@ class Products extends Controller
     {
         if ($this->response['count'] !== 0) {
             $this->response['products'] = collect($this->response['products'])->map(function ($item) {
-                $item->contract_count = UserContract::where('product_id', $item->id)->count();
+                $item->contract_count = UserContract::where('product_id', $item->id)->where('status', 0)->count();
             });
         }
     }
