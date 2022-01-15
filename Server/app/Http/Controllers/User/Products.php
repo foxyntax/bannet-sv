@@ -90,6 +90,9 @@ class Products extends Controller
                     $this->fetch_filter_items();
                 }
 
+                // Get Contract Count for every product
+                $this->get_contract_count();
+
                 // Decode Features column
                 $this->decode_features();
 
@@ -292,6 +295,20 @@ class Products extends Controller
         $this->response['products'] = $fechted->offset($offset)->limit($limit)->get();
         $this->response['count'] = $fechted->count('product_id');
     }
+
+    /**
+     ** Get count of contracts that was fetched
+     * 
+     * @return void
+     */
+    protected function get_contract_count()
+    {
+        if ($this->response['count'] !== 0) {
+            $this->response['products'] = collect($this->response['products'])->map(function ($item) {
+                $item->contract_count = UserContract::where('product_id', $item->id)->count();
+            });
+        }
+    }
     
     /**
      ** Decode Features column
@@ -300,7 +317,7 @@ class Products extends Controller
      */
     protected function decode_features()
     {
-        if (count($this->response['products']) !== 0) {
+        if ($this->response['count'] !== 0) {
             $this->response['products'] = collect($this->response['products'])->map(function ($item) {
                 $item->features = json_decode($item->features);
                 return $item;
