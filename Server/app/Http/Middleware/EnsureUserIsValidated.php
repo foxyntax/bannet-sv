@@ -41,6 +41,7 @@ class EnsureUserIsValidated
      */
     public function handle(Request $request, Closure $next)
     {
+        return $next($request);
         // The request is not performs for specify user, so let it go
         $this->params = $request->route()->parameters();
         if(!$request->has('user_id') && !isset($this->params['user_id'])) {
