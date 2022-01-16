@@ -90,11 +90,8 @@ class Products extends Controller
                     $this->fetch_filter_items();
                 }
 
-                // Get Contract Count for every product
-                $this->get_contract_count();
-
-                // Decode Features column
-                $this->decode_features();
+                // Get Products Count | Decode JSON
+                $this->mutate_fetched_data();
 
                 return response()->json($this->response, $this->http);
             } else {
@@ -173,9 +170,7 @@ class Products extends Controller
         // get brands
         $this->response['filters']['brands'] = CoreOption::where('option', 'SAVED_BRAND')->select('value')->first();
         $this->response['filters']['width'] = CoreOption::where('option', 'SAVED_WIDTH')->select('value')->first();
-        // $this->response['filters']['weight'] = CoreOption::where('option', 'SAVED_WEIGHT')->select('value')->first();
         $this->response['filters']['height'] = CoreOption::where('option', 'SAVED_HEIGHT')->select('value')->first();
-        // $this->response['filters']['tyre_height'] = CoreOption::where('option', 'SAVED_TYRE_HEIGHT')->select('value')->first();
     }
 
     /**
@@ -261,18 +256,10 @@ class Products extends Controller
                                     if ($request->has('width')) {
                                         $query->where('features->width', $request->width);
                                     }
-
-                                    // if ($request->has('weight')) {
-                                    //     $query->where('features->weight', $request->weight);
-                                    // }
                                     
                                     if ($request->has('height')) {
                                         $query->where('features->height', $request->height);
                                     }
-
-                                    // if ($request->has('tire_height')) {
-                                    //     $query->where('features->tire_height', $request->tire_height);
-                                    // }
 
                                     if ($request->has('for_back')) {
                                         $query->where('features->for_back', $request->for_back);
@@ -297,32 +284,26 @@ class Products extends Controller
     }
 
     /**
-     ** Get count of contracts that was fetched
+     ** 
      * 
      * @return void
      */
-    protected function get_contract_count()
+    protected function mutate_fetched_data()
     {
         if ($this->response['count'] !== 0) {
             $this->response['products'] = collect($this->response['products'])->map(function ($item) {
+
+                // Get count of contracts that was fetched
                 $item->contract_count = UserContract::where('product_id', $item->id)->where('status', 0)->count();
-            });
-        }
-    }
-    
-    /**
-     ** Decode Features column
-     * 
-     * @return void
-     */
-    protected function decode_features()
-    {
-        if ($this->response['count'] !== 0) {
-            $this->response['products'] = collect($this->response['products'])->map(function ($item) {
+
+                // Decode features
                 $item->features = json_decode($item->features);
+
                 return $item;
             });
         }
+        
+        
     }
 
 }
