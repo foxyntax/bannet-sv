@@ -61,13 +61,19 @@ trait FetchProfile {
             if($request->has('contract')) {
                 $this->response['contract'] = UserContract::where('user_id', $this->user->id)
                                                         ->orWhere('meta->customer_id', $this->user->id)
+                                                        ->join('core_products', 'core_products.id', '=', 'user_contracts.product_id')
+                                                        ->select('user_contracts.*', 'core_products.features as product_features')
                                                         ->get();
                 
-                // we don't allowed to user see token in client
+                
                 foreach ($this->response['contract'] as $ad) {
+                    // We don't allowed to user see token in client
                     if(isset($ad->meta['token'])) {
                         unset($ad->meta['token']);
                     }
+
+                    // Also decode features
+                    $ad->product_features = json_decode($ad->product_features);
                 }
             }
 
