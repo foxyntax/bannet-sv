@@ -69,7 +69,7 @@ class Contract extends Controller
             $seller_wallet->save();
 
             // Take a notice customer and seller by sending SMS
-            // // $this->notice_withdrawal();
+            $this->notice_withdrawal();
 
             // Change status
             $this->contract->status = 2;
@@ -208,7 +208,8 @@ class Contract extends Controller
             $users = UserContract::where('status', 0)
                                  ->where('expired_at', '<', now())
                                  ->join('users', 'users.id', '=', 'user_contracts.user_id')
-                                 ->select('full_name', 'tell', 'expired_at')
+                                 ->join('core_products', 'core_products.id', '=', 'user_contracts.product_id')
+                                 ->select('full_name', 'tell', 'expired_at', 'features as product_features')
                                  ->get();
 
             // Expire all contracts which are timed out
@@ -217,7 +218,7 @@ class Contract extends Controller
                         ->update(['status' => 4]);
 
             // Notice all owners' contract by sending SMS
-            // $this->notice_expired_contracts($user);
+            $this->notice_expired_contracts($user);
 
             return response()->json([
                 'status' => true

@@ -219,7 +219,7 @@ class Contract extends Controller
             $this->contract->save();
 
             // Take a notice customer and seller by sending SMS
-            // $this->notice_cancel_contract();
+            $this->notice_cancel_contract();
 
             return response()->json([
                 'status' => true
@@ -329,7 +329,7 @@ class Contract extends Controller
                 $this->contract->status = 3;
 
                 // Take a notice customer and seller by sending SMS
-                // $this->notice_withdrawal();
+                $this->notice_withdrawal();
 
                 return response()->json([
                     'status' => true,
