@@ -95,8 +95,8 @@ class ProductDetail extends Controller
                                                 ->where([
                                                     'product_id' => $product_id,
                                                     'status'     => 0
-                                                ]);
-                                                // ->whereDate('expired_at', '>=',  Carbon::now()->toDateString());
+                                                ])
+                                                ->whereDate('expired_at', '>=',  Carbon::now()->toDateString());
         if ($user_id !== 0) {
             $this->response['ads'] = $this->response['ads']->where('user_id', '!=', $user_id)->get();
         } else {
