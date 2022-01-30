@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Traits\Kavenegar;
 use App\Models\UserWallet;
 use Illuminate\Http\Request;
+use App\Models\CoreMembership;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 
@@ -89,10 +90,15 @@ class RegisterController extends Controller
             /** 
              ** Your Plans ...
             */
+            // Assign a free membership plan to the user
+            $free_membership = CoreMembership::where('meta->cost', '0')->select('id')->first();
+
             // Create wallet for new user
             UserWallet::create([
-                'user_id'   => $this->user->id,
+                'user_id'       => $this->user->id,
+                'membership_id' => $free_membership->id,
             ]);
+
 
             /**
              ** General Actions [please don't remove these codes] 
