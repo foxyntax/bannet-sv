@@ -37,7 +37,7 @@ class Membership extends Controller
     public function fetch_available_memberships() : object
     {
         try {
-            $this->response = CoreMembership::where('status', 1)->get();
+            $this->response = CoreMembership::where('status', 1)->where('meta->cost', '!=', 0)->get();
 
             return response()->json([
                 'memberships' => $this->response
